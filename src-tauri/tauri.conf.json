@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "tauri-updater",
+  "version": "0.1.0",
+  "identifier": "com.tauri-updater.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "tauri-updater",
+        "width": 800,
+        "height": 600
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "createUpdaterArtifacts": true,
+    "active": true,
+    "targets": "msi",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJDMDk4MTcxNTQ2MjQ3OEEKUldTS1IySlVjWUVKdktEKzlaRXA1V0daOXJNVnpncnFvdUdOTnNKN2pJMjdLcWpWVVAzS1ZITkUK",
+      "endpoints": [
+        "https://gist.githubusercontent.com/elenscode/ce40876acbacacb89a3ac3bc3aff850b/raw/826960e119040e39d98903bfc1fd73716abb0493/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
