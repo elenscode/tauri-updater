@@ -5,6 +5,7 @@ import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import "./App.css";
+import ImageGrid from "./components/ImageGrid_fixed";
 
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -48,7 +49,6 @@ function GridExample() {
         rowData={rowData}
         columnDefs={colDefs}
         defaultColDef={defaultColDef}
-        rowSelection="multiple"
       />
     </div>
   );
@@ -179,16 +179,9 @@ function App() {
                   <div className="w-48">
                     <button className="btn btn-outline btn-info">다시 그리기</button>
                   </div>
-                </div></div>
-              <div className="grid grid-cols-6 gap-1 h-[680px] overflow-auto">
-                {Array.from({ length: 30 }, (_, index) => (
-                  <div key={index} className="w-44 h-36 py-2.5  bg-white flex flex-col justify-center items-center hover:bg-blue-300 hover:cursor-pointer">
-                    <div className="text-center justify-start text-neutral-500 text-xs font-normal ">AAAA W00</div>
-                    <div className="w-24 h-24 bg-zinc-300 rounded-full" />
-                  </div>
-                ))
-                }
+                </div>
               </div>
+              <ImageGrid />
             </div>
           </div>
         </div>
