@@ -35,9 +35,11 @@
   },
   "plugins": {
     "updater": {
+      "active": true,
+      "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJDMDk4MTcxNTQ2MjQ3OEEKUldTS1IySlVjWUVKdktEKzlaRXA1V0daOXJNVnpncnFvdUdOTnNKN2pJMjdLcWpWVVAzS1ZITkUK",
       "endpoints": [
-        "https://gist.githubusercontent.com/elenscode/ce40876acbacacb89a3ac3bc3aff850b/raw/826960e119040e39d98903bfc1fd73716abb0493/latest.json"
+        "https://github.com/elenscode/tauri-updater/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"
