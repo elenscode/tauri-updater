@@ -1,11 +1,12 @@
-import { useEffect, Suspense, useState } from "react";
+import { useEffect, Suspense, useState, useCallback } from "react";
 // import { check } from '@tauri-apps/plugin-updater';
-
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import "./App.css";
-import ImageGrid from "./components/ImageGrid_fixed";
+import { fetchImageMetadata } from './api/imageGenerator';
+import ImageGrid from "./components/ImageGrid";
+import { ImageData } from './types/image';
 
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -56,17 +57,20 @@ function GridExample() {
 
 function App() {
 
-  useEffect(() => {
-    const checkForUpdates = async () => {
-      try {
+  const [totalCount, setTotalCount] = useState(0);
+  const [images, setImages] = useState<ImageData[]>([]);
 
-      } catch (error) {
-        console.error("Error checking for updates:", error);
-      }
-    };
 
-    checkForUpdates();
+  const fetchData = useCallback(async () => {
+    try {
+      const { totalCount, images } = await fetchImageMetadata();
+      setTotalCount(totalCount);
+      setImages(images);
+    } catch (error) {
+      console.error("Error fetching images:", error);
+    }
   }, []);
+
 
   return (
     <main className="container mx-auto">
@@ -148,8 +152,7 @@ function App() {
               <div className="h-14 py-[5px]">
                 <button className="btn btn-outline btn-info">필터</button>
               </div>
-            </div>
-            <div className="flex-1 flex flex-col outline-1">
+            </div>            <div className="flex-1 flex flex-col outline-1">
               <div className="flex justify-center items-end gap-2.5">
                 <div className="w-48 flex flex-col p-2">
                   <div className="text-lg font-bold ">아이템</div>
@@ -177,11 +180,11 @@ function App() {
                 </div>
                 <div className="w-48 flex flex-col p-2">
                   <div className="w-48">
-                    <button className="btn btn-outline btn-info">다시 그리기</button>
+                    <button className="btn btn-outline btn-info" onClick={fetchData}>그리기</button>
                   </div>
                 </div>
               </div>
-              <ImageGrid />
+              <ImageGrid totalCount={totalCount} images={images} />
             </div>
           </div>
         </div>
