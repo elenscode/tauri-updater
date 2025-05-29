@@ -1,26 +1,64 @@
-import { useState } from 'react';
-import type { ImageData } from '../types/image';
+import { create } from 'zustand';
+import { ImageData } from '../types/image';
 
-// 전역 ImageData 배열을 관리하는 커스텀 훅
-let globalImageData: ImageData[] = [];
-let listeners: Array<(data: ImageData[]) => void> = [];
+interface ImageDataStore {
+    // 전체 이미지 데이터
+    totalCount: number;
+    images: ImageData[];
 
-export function useImageDataStore(): [ImageData[], (data: ImageData[]) => void] {
-    const [imageData, setImageData] = useState<ImageData[]>(globalImageData);
+    // 검색 결과 데이터
+    searchResults: ImageData[];
 
-    // setter: 전역 데이터와 모든 구독자 동기화
-    const setGlobalImageData = (data: ImageData[]) => {
-        globalImageData = data;
-        setImageData(data);
-        listeners.forEach(fn => fn(data));
-    };
+    // DataGrid에서 선택된 항목들
+    selectedGridItems: Set<string>;
 
-    // mount/unmount 시 구독 관리
-    if (!listeners.includes(setImageData)) {
-        listeners.push(setImageData);
-    }
-    // cleanup
-    // (실제 앱에서는 useEffect로 구독 해제 필요)
+    // 필터된 이미지 (그리기 버튼으로 생성)
+    filteredImages: ImageData[];
+    filteredTotalCount: number;
 
-    return [imageData, setGlobalImageData];
+    // Actions
+    setImageData: (totalCount: number, images: ImageData[]) => void;
+    setSearchResults: (searchResults: ImageData[]) => void;
+    setSelectedGridItems: (selectedItems: Set<string>) => void;
+    applyFilter: () => void;
+    clearData: () => void;
 }
+
+export const useImageDataStore = create<ImageDataStore>((set, get) => ({
+    // Initial state
+    totalCount: 0,
+    images: [],
+    searchResults: [],
+    selectedGridItems: new Set<string>(),
+    filteredImages: [],
+    filteredTotalCount: 0,
+
+    // Actions
+    setImageData: (totalCount, images) => set({
+        totalCount,
+        images,
+        searchResults: images, // 검색 결과도 함께 설정
+    }),
+
+    setSearchResults: (searchResults) => set({ searchResults }),
+
+    setSelectedGridItems: (selectedItems) => set({ selectedGridItems: selectedItems }),
+
+    applyFilter: () => {
+        const { images, selectedGridItems } = get();
+        const filtered = images.filter(image => selectedGridItems.has(image.id));
+        set({
+            filteredImages: filtered,
+            filteredTotalCount: filtered.length,
+        });
+    },
+
+    clearData: () => set({
+        totalCount: 0,
+        images: [],
+        searchResults: [],
+        selectedGridItems: new Set<string>(),
+        filteredImages: [],
+        filteredTotalCount: 0,
+    }),
+}));
