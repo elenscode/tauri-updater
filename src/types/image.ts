@@ -10,4 +10,5 @@ export interface ImageGridProps {
     totalCount: number;
     images: ImageData[];
     apiEndpoint?: string;
+    cacheVersion?: number;
 }

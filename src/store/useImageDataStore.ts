@@ -16,12 +16,16 @@ interface ImageDataStore {
     filteredImages: ImageData[];
     filteredTotalCount: number;
 
+    // 캐시 새로고침을 위한 버전
+    cacheVersion: number;
+
     // Actions
     setImageData: (totalCount: number, images: ImageData[]) => void;
     setSearchResults: (searchResults: ImageData[]) => void;
     setSelectedGridItems: (selectedItems: Set<string>) => void;
     applyFilter: () => void;
     clearData: () => void;
+    refreshCache: () => void;
 }
 
 export const useImageDataStore = create<ImageDataStore>((set, get) => ({
@@ -32,6 +36,7 @@ export const useImageDataStore = create<ImageDataStore>((set, get) => ({
     selectedGridItems: new Set<string>(),
     filteredImages: [],
     filteredTotalCount: 0,
+    cacheVersion: 0,
 
     // Actions
     setImageData: (totalCount, images) => set({
@@ -50,8 +55,12 @@ export const useImageDataStore = create<ImageDataStore>((set, get) => ({
         set({
             filteredImages: filtered,
             filteredTotalCount: filtered.length,
+            cacheVersion: Date.now(), // 캐시 버전 업데이트
         });
     },
+    refreshCache: () => set({
+        cacheVersion: Date.now(),
+    }),
 
     clearData: () => set({
         totalCount: 0,
@@ -60,5 +69,6 @@ export const useImageDataStore = create<ImageDataStore>((set, get) => ({
         selectedGridItems: new Set<string>(),
         filteredImages: [],
         filteredTotalCount: 0,
+        cacheVersion: 0,
     }),
 }));

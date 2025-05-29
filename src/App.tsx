@@ -9,12 +9,11 @@ import { useImageDataStore } from './store/useImageDataStore';
 
 function App() {
   const {
-    totalCount,
-    images,
     filteredImages,
     filteredTotalCount,
     searchResults,
     selectedGridItems,
+    cacheVersion,
     setImageData,
     applyFilter
   } = useImageDataStore();
@@ -146,10 +145,10 @@ function App() {
                     <button className="btn btn-outline btn-info" onClick={handleDraw}>그리기</button>
                   </div>
                 </div>
-              </div>
-              <ImageGrid
-                totalCount={filteredTotalCount}
+              </div>              <ImageGrid
+                totalCount={filteredTotalCount > 0 ? filteredTotalCount : 0}
                 images={filteredImages}
+                cacheVersion={cacheVersion}
               />
             </div>
           </div>

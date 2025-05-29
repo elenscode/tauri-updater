@@ -12,7 +12,8 @@ interface VirtualItem {
 const ImageGrid: React.FC<ImageGridProps> = ({
     totalCount: propTotalCount,
     images: propImages,
-    apiEndpoint = '/api/images'
+    apiEndpoint = '/api/images',
+    cacheVersion = 0
 }) => {
     const [imageCache, setImageCache] = useState<Map<string, string>>(new Map());
     const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
@@ -46,11 +47,20 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     // 상태 업데이트 시 ref도 동기화
     useEffect(() => {
         imageCacheRef.current = imageCache;
-    }, [imageCache]);
-
-    useEffect(() => {
+    }, [imageCache]); useEffect(() => {
         loadingImagesRef.current = loadingImages;
     }, [loadingImages]);
+
+    // cacheVersion이 변경될 때 캐시 초기화
+    useEffect(() => {
+        if (cacheVersion > 0) {
+            console.log('Cache refreshed due to version change:', cacheVersion);
+            setImageCache(new Map());
+            setLoadingImages(new Set());
+            imageCacheRef.current = new Map();
+            loadingImagesRef.current = new Set();
+        }
+    }, [cacheVersion]);
 
     const fetchImageUrl = useCallback(async (imageId: string): Promise<string> => {
         // 캐시에서 먼저 확인
