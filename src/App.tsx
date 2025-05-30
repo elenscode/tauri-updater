@@ -39,12 +39,12 @@ function App() {
 
 
   return (
-    <main className="container mx-auto">
+    <main className="w-full max-w-none">
 
       <Suspense fallback={<div>Loading...</div>}>
-        <div className="w-[1920px] h-[900px] flex-col justify-center items-center gap-2.5">
+        <div className="w-full h-[900px] flex-col justify-center items-center gap-2.5">
           <div className="h-10 relative" />
-          <div className="flex-1 p-2.5 inline-flex justify-start items-start gap-2.5">
+          <div className="flex flex-1 p-2.5 justify-start items-start gap-2.5">
             <div className="w-72 inline-flex flex-col justify-start items-center gap-2.5">
               <div className="self-stretch inline-flex justify-start items-center overflow-hidden">
                 <div className="tabs tabs-lift">
@@ -121,7 +121,8 @@ function App() {
                 </div>
               )}
               <DataGrid />
-            </div><div className="flex-1 flex flex-col outline-1">
+            </div>
+            <div className="flex-1 flex flex-col outline-1">
               <div className="flex justify-center items-end gap-2.5">
                 <div className="w-48 flex flex-col p-2">
                   <div className="text-lg font-bold ">아이템</div>
