@@ -1,72 +1,42 @@
-import { useEffect, Suspense, useState } from "react";
-// import { check } from '@tauri-apps/plugin-updater';
-
-import type { ColDef } from "ag-grid-community";
-import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
-import { AgGridReact } from "ag-grid-react";
+import { Suspense, useCallback, useEffect } from "react";
 import "./App.css";
-import ImageGrid from "./components/ImageGrid_fixed";
+import { fetchImageMetadata } from './api/imageGenerator';
+import ImageGrid from "./components/ImageGrid";
+import DataGrid from "./components/DataGrid";
+import { useImageDataStore } from './store/useImageDataStore';
 
 
-ModuleRegistry.registerModules([AllCommunityModule]);
-
-// Row Data Interface
-interface IRow {
-  lot: string;
-  wafer: string;
-  col1: number;
-  col2: number;
-}
-
-function GridExample() {
-  // Row Data: The data to be displayed.
-  const [rowData, setRowData] = useState<IRow[]>([
-    { lot: "AA", wafer: "01", col1: 3.5, col2: 5 },
-    { lot: "AA", wafer: "02", col1: 3.5, col2: 5 },
-    { lot: "AA", wafer: "03", col1: 3.5, col2: 5 },
-    { lot: "AA", wafer: "04", col1: 3.5, col2: 5 },
-    { lot: "AA", wafer: "05", col1: 3.5, col2: 5 },
-    { lot: "AA", wafer: "06", col1: 3.5, col2: 5 },
-
-  ]);
-
-  // Column Definitions: Defines & controls grid columns.
-  const [colDefs, setColDefs] = useState<ColDef<IRow>[]>([
-    { field: "lot" },
-    { field: "wafer" },
-    { field: "col1" },
-    { field: "col2" },
-  ]);
-
-  const defaultColDef: ColDef = {
-    flex: 1,
-  };
-
-  // Container: Defines the grid's theme & dimensions.
-  return (
-    <div style={{ width: "100%", height: "720px" }}>
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={colDefs}
-        defaultColDef={defaultColDef}
-      />
-    </div>
-  );
-}
 
 function App() {
+  const {
+    totalCount,
+    images,
+    filteredImages,
+    filteredTotalCount,
+    searchResults,
+    selectedGridItems,
+    cacheVersion,
+    setImageData,
+    applyFilter
+  } = useImageDataStore();
 
-  useEffect(() => {
-    const checkForUpdates = async () => {
-      try {
+  const fetchData = useCallback(async () => {
+    try {
+      const { totalCount, images } = await fetchImageMetadata();
+      setImageData(totalCount, images);
+    } catch (error) {
+      console.error("Error fetching images:", error);
+    }
+  }, [setImageData]);
+  const handleDraw = useCallback(() => {
+    applyFilter();
+  }, [applyFilter]);
 
-      } catch (error) {
-        console.error("Error checking for updates:", error);
-      }
-    };
+  // // 컴포넌트 마운트 시 초기 데이터 로드
+  // useEffect(() => {
+  //   fetchData();
+  // }, [fetchData]);
 
-    checkForUpdates();
-  }, []);
 
   return (
     <main className="container mx-auto">
@@ -96,6 +66,7 @@ function App() {
                       <label className="input input-info">
                         <input type="text" />
                       </label>
+                      <button className="btn" onClick={fetchData}>검색</button>
 
                     </div>
 
@@ -144,12 +115,13 @@ function App() {
             </div>
             <div className="w-96 p-[5px] outline-1 flex flex-col justify-start items-center gap-2.5 overflow-hidden">
               <div className="text-center justify-start text-lg font-bold ">조회 내용</div>
-              <GridExample />
-              <div className="h-14 py-[5px]">
-                <button className="btn btn-outline btn-info">필터</button>
-              </div>
-            </div>
-            <div className="flex-1 flex flex-col outline-1">
+              {searchResults.length > 0 && (
+                <div className="text-sm text-gray-600 mb-2">
+                  총 {searchResults.length}개 항목 • 선택됨: {selectedGridItems.size}개
+                </div>
+              )}
+              <DataGrid />
+            </div><div className="flex-1 flex flex-col outline-1">
               <div className="flex justify-center items-end gap-2.5">
                 <div className="w-48 flex flex-col p-2">
                   <div className="text-lg font-bold ">아이템</div>
@@ -174,14 +146,16 @@ function App() {
                     <option>MAX</option>
                     <option>MEAN</option>
                   </select>
-                </div>
-                <div className="w-48 flex flex-col p-2">
+                </div>                <div className="w-48 flex flex-col p-2">
                   <div className="w-48">
-                    <button className="btn btn-outline btn-info">다시 그리기</button>
+                    <button className="btn btn-outline btn-info" onClick={handleDraw}>그리기</button>
                   </div>
                 </div>
-              </div>
-              <ImageGrid />
+              </div>              <ImageGrid
+                totalCount={filteredTotalCount > 0 ? filteredTotalCount : totalCount}
+                images={filteredImages.length > 0 ? filteredImages : images}
+                cacheVersion={cacheVersion}
+              />
             </div>
           </div>
         </div>
