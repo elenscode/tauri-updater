@@ -136,6 +136,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         }
     }, [virtualItems, loadVisibleImages]);
 
+
     const handleColumnsChange = useCallback((newColumns: number) => {
         setColumns(newColumns);
         // When columns change, virtualizer updates automatically due to changed `rowCount`
@@ -196,6 +197,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
                             <span className="text-sm text-blue-600 font-medium">
                                 선택 <span className="font-bold">{selectedImages.size}</span>개
                             </span>
+
                             {selectedImages.size > 0 && (
                                 <button
                                     onClick={clearSelection}
