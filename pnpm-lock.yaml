@@ -8,9 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@opencvjs/web':
+        specifier: 4.11.0-release.1
+        version: 4.11.0-release.1
       '@tailwindcss/vite':
         specifier: ^4.1.6
         version: 4.1.6(vite@6.3.5(jiti@2.4.2)(lightningcss@1.29.2))
+      '@tanstack/react-virtual':
+        specifier: ^3.13.9
+        version: 3.13.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tauri-apps/api':
         specifier: ^2
         version: 2.5.0
@@ -23,9 +29,6 @@ importers:
       '@tauri-apps/plugin-updater':
         specifier: ~2
         version: 2.7.1
-      '@techstark/opencv-js':
-        specifier: 4.10.0-release.1
-        version: 4.10.0-release.1
       ag-grid-community:
         specifier: ^33.2.4
         version: 33.2.4
@@ -324,6 +327,12 @@ packages:
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
 
+  '@opencvjs/types@4.11.0-release.1':
+    resolution: {integrity: sha512-Xv7VbOOOlvaQ6yFEqCVtVFVWnO+zaE0d8xWfsFevQ9bJvFp23AQfV4ryuXpSBJDDYrbVgUPBt2UlYpwL0O9ofQ==}
+
+  '@opencvjs/web@4.11.0-release.1':
+    resolution: {integrity: sha512-ZbYKm6bkDoZD+zwT3xY+eJVZh4AYbHOyJV4sZnQXSGTaR0mXDfVg3k1jpvNITtJl+e42GAMk2gNu49wZF3AZXA==}
+
   '@rollup/rollup-android-arm-eabi@4.40.2':
     resolution: {integrity: sha512-JkdNEq+DFxZfUwxvB58tHMHBHVgX23ew41g1OQinthJ+ryhdRk67O31S7sYw8u2lTjHUPFxwar07BBt1KHp/hg==}
     cpu: [arm]
@@ -514,6 +523,15 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6
 
+  '@tanstack/react-virtual@3.13.9':
+    resolution: {integrity: sha512-SPWC8kwG/dWBf7Py7cfheAPOxuvIv4fFQ54PdmYbg7CpXfsKxkucak43Q0qKsxVthhUJQ1A7CIMAIplq4BjVwA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@tanstack/virtual-core@3.13.9':
+    resolution: {integrity: sha512-3jztt0jpaoJO5TARe2WIHC1UQC3VMLAFUW5mmMo0yrkwtDB2AQP0+sh10BVUpWrnvHjSLvzFizydtEGLCJKFoQ==}
+
   '@tauri-apps/api@2.5.0':
     resolution: {integrity: sha512-Ldux4ip+HGAcPUmuLT8EIkk6yafl5vK0P0c0byzAKzxJh7vxelVtdPONjfgTm96PbN24yjZNESY8CKo8qniluA==}
 
@@ -596,9 +614,6 @@ packages:
 
   '@tauri-apps/plugin-updater@2.7.1':
     resolution: {integrity: sha512-1OPqEY/z7NDVSeTEMIhD2ss/vXWdpfZ5Th2Mk0KtPR/RA6FKuOTDGZQhxoyYBk0pcZJ+nNZUbl/IujDCLBApjA==}
-
-  '@techstark/opencv-js@4.10.0-release.1':
-    resolution: {integrity: sha512-S4XELidRiQeA0q1s9VQLo540wCxUo24r1O4C+LqZ6llX+sPCXvZCPv3Ice8dEIr0uavyZ8YZeKXSBdDgMXSXjw==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -1187,6 +1202,12 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
+  '@opencvjs/types@4.11.0-release.1': {}
+
+  '@opencvjs/web@4.11.0-release.1':
+    dependencies:
+      '@opencvjs/types': 4.11.0-release.1
+
   '@rollup/rollup-android-arm-eabi@4.40.2':
     optional: true
 
@@ -1318,6 +1339,14 @@ snapshots:
       tailwindcss: 4.1.6
       vite: 6.3.5(jiti@2.4.2)(lightningcss@1.29.2)
 
+  '@tanstack/react-virtual@3.13.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@tanstack/virtual-core': 3.13.9
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@tanstack/virtual-core@3.13.9': {}
+
   '@tauri-apps/api@2.5.0': {}
 
   '@tauri-apps/cli-darwin-arm64@2.5.0':
@@ -1378,8 +1407,6 @@ snapshots:
   '@tauri-apps/plugin-updater@2.7.1':
     dependencies:
       '@tauri-apps/api': 2.5.0
-
-  '@techstark/opencv-js@4.10.0-release.1': {}
 
   '@types/babel__core@7.20.5':
     dependencies:

@@ -13,3 +13,5 @@ export interface ImageGridProps {
     apiEndpoint?: string;
     cacheVersion?: number;
 }
+
+export interface PointData { x: number; y: number; value: string; }

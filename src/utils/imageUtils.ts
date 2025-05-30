@@ -1,4 +1,6 @@
-import cv from '@techstark/opencv-js';
+import { PointData } from '../types/image';
+import { getCV } from './opencvLoaders';
+
 
 // API response data structure
 interface ApiDataItem {
@@ -25,6 +27,7 @@ const MOCK_API_ENDPOINT = '/api/image-data';
  *          or rejects with an error.
  */
 export async function generateImageUrlFromApi(apiEndpoint: string = MOCK_API_ENDPOINT): Promise<string> {
+  const cv = await getCV();
   try {
     // 1. Ensure OpenCV is ready (cv object should be available globally)
     // For @techstark/opencv-js, it's typically available after import.
@@ -37,7 +40,7 @@ export async function generateImageUrlFromApi(apiEndpoint: string = MOCK_API_END
 
     // 2. Fetch data from the API
     console.log(`Fetching data from ${apiEndpoint}...`);
-    
+
     // MOCK IMPLEMENTATION:
     // Replace this with an actual fetch call when the API is ready
     const mockApiResponse: ApiResponse = await new Promise(resolve => setTimeout(() => {
@@ -47,8 +50,8 @@ export async function generateImageUrlFromApi(apiEndpoint: string = MOCK_API_END
           { x: 10, y: 20, value: '100' },
           { x: 12, y: 22, value: '150' },
           { x: 10, y: 21, value: '50' },
-          { x: 100, y: 150, value: '200'},
-          { x: 0, y: 0, value: '255'} // For testing bounds
+          { x: 100, y: 150, value: '200' },
+          { x: 0, y: 0, value: '255' } // For testing bounds
         ],
       });
     }, 500));
@@ -79,14 +82,14 @@ export async function generateImageUrlFromApi(apiEndpoint: string = MOCK_API_END
     }
 
     if (x_min === Infinity || y_min === Infinity) { // handles empty or invalid data points
-        throw new Error('No valid data points found to determine image dimensions.');
+      throw new Error('No valid data points found to determine image dimensions.');
     }
 
     const img_width = x_max - x_min + 1;
     const img_height = y_max - y_min + 1;
 
     if (img_width <= 0 || img_height <= 0) {
-        throw new Error('Calculated image dimensions are invalid.');
+      throw new Error('Calculated image dimensions are invalid.');
     }
     console.log(`Original image dimensions: ${img_width}x${img_height}`);
 
@@ -181,3 +184,88 @@ async function testImageGeneration() {
 // }
 // Or for browser, you might call testImageGeneration() from an appropriate place.
 */
+
+export async function generateImageDataUrlFromPoints(
+  points: PointData[],
+  outputSize: { width: number; height: number } = { width: 300, height: 300 },
+  padding: number = 0
+): Promise<string> {
+  const cv = await getCV();
+
+  // 1) Bounding box 계산
+  let xMin = Infinity, xMax = -Infinity;
+  let yMin = Infinity, yMax = -Infinity;
+  points.forEach(p => {
+    xMin = Math.min(xMin, p.x);
+    xMax = Math.max(xMax, p.x);
+    yMin = Math.min(yMin, p.y);
+    yMax = Math.max(yMax, p.y);
+  });
+  const rawWidth = xMax - xMin + 1;
+  const rawHeight = yMax - yMin + 1;
+
+  // 전체 Mat 크기에 padding 포함
+  const width = rawWidth + padding * 2;
+  const height = rawHeight + padding * 2;
+
+  // 2) 값 정규화: [minVal,maxVal] -> [0,255]
+  const rawValues = points.map(p => parseInt(p.value, 10));
+  const minVal = Math.min(...rawValues);
+  const maxVal = Math.max(...rawValues);
+
+  // 3) 그레이스케일 Mat 생성 및 픽셀값 설정 (padding 오프셋 적용)
+  const src = cv.Mat.zeros(height, width, cv.CV_8UC1);
+  points.forEach(p => {
+    const raw = parseInt(p.value, 10);
+    const norm = maxVal !== minVal
+      ? Math.round(((raw - minVal) / (maxVal - minVal)) * 255)
+      : (raw > 0 ? 255 : 0);
+    const x0 = p.x - xMin + padding;
+    const y0 = p.y - yMin + padding;
+    src.ucharPtr(y0, x0)[0] = norm;
+  });
+
+  // 4) RGBA Mat 생성 및 JET 컬러맵 직접 계산
+  const rgbaMat = cv.Mat.zeros(height, width, cv.CV_8UC4);
+  const toJet = (i: number) => {
+    const t = i / 255;
+    const r = Math.round(Math.max(0, Math.min(1.5 - Math.abs(4 * t - 3), 1)) * 255);
+    const g = Math.round(Math.max(0, Math.min(1.5 - Math.abs(4 * t - 2), 1)) * 255);
+    const b = Math.round(Math.max(0, Math.min(1.5 - Math.abs(4 * t - 1), 1)) * 255);
+    return { r, g, b };
+  };
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const v = src.ucharPtr(y, x)[0];
+      const pixel = rgbaMat.ucharPtr(y, x);
+      if (v === 0) {
+        pixel[3] = 0; // alpha 0
+      } else {
+        const { r, g, b } = toJet(v);
+        pixel[0] = b; // B
+        pixel[1] = g; // G
+        pixel[2] = r; // R
+        pixel[3] = 255; // alpha full
+      }
+    }
+  }
+
+  // 5) nearest-neighbor 리사이즈
+  const resized = new cv.Mat();
+  const dsize = new cv.Size(outputSize.width, outputSize.height);
+  cv.resize(rgbaMat, resized, dsize, 0, 0, cv.INTER_NEAREST);
+
+  // 6) Offscreen canvas → Data URL
+  const canvas = document.createElement('canvas');
+  canvas.width = outputSize.width;
+  canvas.height = outputSize.height;
+  cv.imshow(canvas, resized);
+  const dataUrl = canvas.toDataURL('image/png');
+
+  // 메모리 해제
+  src.delete();
+  rgbaMat.delete();
+  resized.delete();
+
+  return dataUrl;
+}

@@ -151,9 +151,10 @@ function App() {
                     <button className="btn btn-outline btn-info" onClick={handleDraw}>그리기</button>
                   </div>
                 </div>
-              </div>              <ImageGrid
-                totalCount={filteredTotalCount > 0 ? filteredTotalCount : totalCount}
-                images={filteredImages.length > 0 ? filteredImages : images}
+              </div>
+              <ImageGrid
+                totalCount={filteredTotalCount}
+                images={filteredImages}
                 cacheVersion={cacheVersion}
               />
             </div>
