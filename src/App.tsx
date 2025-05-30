@@ -1,4 +1,4 @@
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useEffect } from "react";
 import "./App.css";
 import { fetchImageMetadata } from './api/imageGenerator';
 import ImageGrid from "./components/ImageGrid";
@@ -9,6 +9,8 @@ import { useImageDataStore } from './store/useImageDataStore';
 
 function App() {
   const {
+    totalCount,
+    images,
     filteredImages,
     filteredTotalCount,
     searchResults,
@@ -26,10 +28,14 @@ function App() {
       console.error("Error fetching images:", error);
     }
   }, [setImageData]);
-
   const handleDraw = useCallback(() => {
     applyFilter();
   }, [applyFilter]);
+
+  // // 컴포넌트 마운트 시 초기 데이터 로드
+  // useEffect(() => {
+  //   fetchData();
+  // }, [fetchData]);
 
 
   return (
@@ -146,8 +152,8 @@ function App() {
                   </div>
                 </div>
               </div>              <ImageGrid
-                totalCount={filteredTotalCount > 0 ? filteredTotalCount : 0}
-                images={filteredImages}
+                totalCount={filteredTotalCount > 0 ? filteredTotalCount : totalCount}
+                images={filteredImages.length > 0 ? filteredImages : images}
                 cacheVersion={cacheVersion}
               />
             </div>

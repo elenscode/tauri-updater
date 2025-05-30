@@ -7,6 +7,7 @@ const fetchImageMetadata = async (): Promise<{ totalCount: number; images: Image
     const totalCount = 1000;
     const images: ImageData[] = Array.from({ length: totalCount }, (_, index) => ({
         id: `image-${index + 1}`,
+        key: `key-${index + 1000}`,
         name: `Image ${index + 1}.jpg`
     }));
 

@@ -15,16 +15,15 @@ function DataGrid() {
         {
             field: "id",
             headerName: "ID",
-            width: 120
+            width: 60
+        },
+        {
+            field: "key",
+            headerName: "키",
         },
         {
             field: "name",
             headerName: "이미지 이름",
-            flex: 1
-        },
-        {
-            field: "url",
-            headerName: "URL",
             flex: 1
         }
     ], []);
@@ -60,8 +59,7 @@ function DataGrid() {
                 columnDefs={colDefs}
                 defaultColDef={defaultColDef}
                 rowSelection={{
-                    mode: "multiRow",
-                    enableClickSelection: true
+                    mode: "multiRow"
                 }}
                 onSelectionChanged={onSelectionChanged}
                 onGridReady={onGridReady}

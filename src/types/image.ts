@@ -2,6 +2,7 @@
 
 export interface ImageData {
     id: string;
+    key: string;
     name: string;
     url?: string;
 }

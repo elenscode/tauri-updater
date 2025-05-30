@@ -73,11 +73,19 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             return '';
         }
 
+        // 실제 이미지 데이터에서 URL 확인
+        const imageData = images.find(img => img.id === imageId);
+        if (imageData && imageData.url) {
+            // 이미 URL이 있는 경우 바로 캐시에 저장
+            setImageCache(prev => new Map(prev).set(imageId, imageData.url!));
+            return imageData.url;
+        }
+
         try {
             // 로딩 시작 표시
             setLoadingImages(prev => new Set(prev).add(imageId));
 
-            // 시뮬레이션 대기
+            // 시뮬레이션 대기 (실제로는 API 호출)
             await new Promise(r => setTimeout(r, 300));
             const url = `https://picsum.photos/300/300?random=${imageId}`;
 
@@ -98,11 +106,10 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             });
             throw error;
         }
-    }, []);
-
-    // Virtual scrolling 계산
+    }, [images]);    // Virtual scrolling 계산
     const virtualItems = useMemo(() => {
-        const totalRows = Math.ceil(totalCount / COLUMNS);
+        const actualImageCount = Math.min(totalCount, images.length);
+        const totalRows = Math.ceil(actualImageCount / COLUMNS);
         const startIndex = Math.max(0, Math.floor(scrollTop / (ITEM_HEIGHT + GAP)) - OVERSCAN);
         const endIndex = Math.min(
             totalRows - 1,
@@ -120,21 +127,19 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         }
 
         return items;
-    }, [totalCount, scrollTop, containerHeight, COLUMNS]);
-
-    // 현재 보이는 이미지들 계산
+    }, [totalCount, images.length, scrollTop, containerHeight, COLUMNS]);// 현재 보이는 이미지들 계산
     const visibleImageIds = useMemo(() => {
         const ids: string[] = [];
         virtualItems.forEach(row => {
             for (let col = 0; col < COLUMNS; col++) {
                 const imageIndex = row.index * COLUMNS + col;
-                if (imageIndex < totalCount) {
-                    ids.push(`image-${imageIndex + 1}`);
+                if (imageIndex < totalCount && imageIndex < images.length) {
+                    ids.push(images[imageIndex].id);
                 }
             }
         });
         return ids;
-    }, [virtualItems, COLUMNS, totalCount]);    // 보이는 이미지들 로드
+    }, [virtualItems, COLUMNS, totalCount, images]);// 보이는 이미지들 로드
     const loadVisibleImages = useCallback(async () => {
         const imagesToLoad = visibleImageIds.filter(id =>
             !imageCacheRef.current.has(id) && !loadingImagesRef.current.has(id)
@@ -248,7 +253,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
                 clearTimeout(scrollTimeoutRef.current);
             }
         };
-    }, [totalCount, handleScroll, loadVisibleImages]); if (totalCount === 0) {
+    }, [totalCount, handleScroll, loadVisibleImages]); if (totalCount === 0 || images.length === 0) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="text-center">
@@ -259,21 +264,24 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         );
     }
 
-    const totalHeight = Math.ceil(totalCount / COLUMNS) * (ITEM_HEIGHT + GAP) + PADDING * 2;
+    // 실제 이미지 수에 맞춘 높이 계산
+    const actualImageCount = Math.min(totalCount, images.length);
+    const totalRows = Math.ceil(actualImageCount / COLUMNS);
+    const totalHeight = totalRows * (ITEM_HEIGHT + GAP) - GAP + PADDING * 2;
 
     return (
         <div className="w-full h-full">
             <div className="mb-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex justify-between items-start mb-3">                    <div>
                     <h2 className="text-xl font-semibold text-gray-800 mb-2">이미지 갤러리 (Virtual Scroll)</h2>
-                    <p className="text-gray-600">총 {totalCount}개의 이미지 • Virtual Scrolling으로 성능 최적화</p>
+                    <p className="text-gray-600">총 {images.length}개의 이미지 표시 중 • Virtual Scrolling으로 성능 최적화</p>
                     <p className="text-sm text-gray-500 mt-1">
                         캐시된 이미지: {imageCache.size} / 로딩 중: {loadingImages.size} / 렌더링된 행: {virtualItems.length}
                     </p>
                     <p className="text-sm text-blue-600 mt-1 font-medium">
                         선택된 이미지: {selectedImages.size}개
                     </p>
-                </div>                    <div className="flex flex-col items-end gap-2">
+                </div><div className="flex flex-col items-end gap-2">
                         <div className="flex gap-2">
                             {selectedImages.size > 0 && (
                                 <button
@@ -318,41 +326,47 @@ const ImageGrid: React.FC<ImageGridProps> = ({
                         height: totalHeight,
                         position: 'relative'
                     }}
-                >
-                    {virtualItems.map(row => {
-                        const rowImages: ImageData[] = [];
-                        for (let col = 0; col < COLUMNS; col++) {
-                            const imageIndex = row.index * COLUMNS + col;
-                            if (imageIndex < totalCount) {
-                                rowImages.push(images[imageIndex]);
-                            }
+                >                    {virtualItems.map(row => {
+                    const rowImages: ImageData[] = [];
+                    for (let col = 0; col < COLUMNS; col++) {
+                        const imageIndex = row.index * COLUMNS + col;
+                        if (imageIndex < images.length && imageIndex < totalCount) {
+                            rowImages.push(images[imageIndex]);
                         }
+                    }
 
-                        return (
-                            <div
-                                key={row.index}
-                                style={{
-                                    position: 'absolute',
-                                    top: row.start + PADDING,
-                                    left: PADDING,
-                                    right: PADDING,
-                                    height: ITEM_HEIGHT,
-                                    display: 'grid',
-                                    gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                                    gap: '1rem'
-                                }}                            >                                {rowImages.map((imageData) => (
-                                    <SkeletonCard
-                                        key={imageData.id}
-                                        imageData={imageData}
-                                        isLoading={loadingImages.has(imageData.id)}
-                                        cachedUrl={imageCache.get(imageData.id)}
-                                        isSelected={selectedImages.has(imageData.id)}
-                                        onToggleSelection={() => toggleImageSelection(imageData.id)}
-                                    />
-                                ))}
-                            </div>
-                        );
-                    })}
+                    // 빈 행은 렌더링하지 않음
+                    if (rowImages.length === 0) {
+                        return null;
+                    }
+
+                    return (
+                        <div
+                            key={row.index}
+                            style={{
+                                position: 'absolute',
+                                top: row.start + PADDING,
+                                left: PADDING,
+                                right: PADDING,
+                                height: ITEM_HEIGHT,
+                                display: 'grid',
+                                gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                                gap: '1rem'
+                            }}
+                        >
+                            {rowImages.map((imageData) => (
+                                <SkeletonCard
+                                    key={imageData.id}
+                                    imageData={imageData}
+                                    isLoading={loadingImages.has(imageData.id)}
+                                    cachedUrl={imageCache.get(imageData.id)}
+                                    isSelected={selectedImages.has(imageData.id)}
+                                    onToggleSelection={() => toggleImageSelection(imageData.id)}
+                                />
+                            ))}
+                        </div>
+                    );
+                })}
                 </div>
             </div>
         </div>
