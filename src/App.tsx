@@ -1,16 +1,16 @@
-import { Suspense, useCallback, useEffect } from "react";
+import { Suspense, useCallback, useState } from "react";
 import "./App.css";
 import { fetchImageMetadata } from './api/imageGenerator';
 import ImageGrid from "./components/ImageGrid";
 import DataGrid from "./components/DataGrid";
 import { useImageDataStore } from './store/useImageDataStore';
+import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 
 
 
 function App() {
   const {
-    totalCount,
-    images,
+
     filteredImages,
     filteredTotalCount,
     searchResults,
@@ -37,6 +37,7 @@ function App() {
   //   fetchData();
   // }, [fetchData]);
 
+  const [showDataGrid, setShowDataGrid] = useState(true);
 
   return (
     <main className="w-full max-w-none">
@@ -113,15 +114,33 @@ function App() {
               </div>
 
             </div>
-            <div className="w-96 p-[5px] outline-1 flex flex-col justify-start items-center gap-2.5 overflow-hidden">
-              <div className="text-center justify-start text-lg font-bold ">조회 내용</div>
-              {searchResults.length > 0 && (
-                <div className="text-sm text-gray-600 mb-2">
-                  총 {searchResults.length}개 항목 • 선택됨: {selectedGridItems.size}개
-                </div>
-              )}
-              <DataGrid />
+            <div className={`overflow-hidden flex flex-col justify-start items-center gap-2.5 outline-1 p-[5px] ${showDataGrid ? 'min-w-[300px] w-96 opacity-100' : 'max-w-0 w-0 opacity-0 pointer-events-none'}`}>
+              <button
+                className="flex items-center gap-2 w-full justify-center py-2 text-lg font-bold text-center select-none hover:bg-gray-100 rounded transition"
+                onClick={() => setShowDataGrid((prev) => !prev)}
+              >
+                조회 내용
+                {showDataGrid ? <IoChevronBack size={22} /> : <IoChevronForward size={22} />}
+              </button>
+              <div className={`w-full ${showDataGrid ? '' : 'hidden'}`}>
+                {searchResults.length > 0 && (
+                  <div className="text-sm text-gray-600 mb-2">
+                    총 {searchResults.length}개 항목 • 선택됨: {selectedGridItems.size}개
+                  </div>
+                )}
+                <DataGrid />
+              </div>
             </div>
+            {!showDataGrid && (
+              <button
+                className="fixed left-2 top-1/2 z-50 bg-white border border-gray-300 rounded-full shadow p-2 flex items-center justify-center hover:bg-gray-100 transition"
+                style={{ transform: 'translateY(-50%)' }}
+                onClick={() => setShowDataGrid(true)}
+                aria-label="조회 내용 열기"
+              >
+                <IoChevronForward size={24} />
+              </button>
+            )}
             <div className="flex-1 flex flex-col outline-1">
               <div className="flex justify-center items-end gap-2.5">
                 <div className="w-48 flex flex-col p-2">
