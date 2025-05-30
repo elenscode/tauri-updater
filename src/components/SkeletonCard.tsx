@@ -29,11 +29,11 @@ const SkeletonCard: React.FC<SkeletonCardProps> = React.memo(({
                 </div>
             )}
             {hasUrl ? (
-                <div className="w-full h-full">
+                <div className="w-full h-full flex items-center justify-center">
                     <img
                         src={imageUrl}
                         alt={imageData.name}
-                        className="w-full h-full object-cover transition-opacity duration-200"
+                        className="aspect-square object-contain max-w-full max-h-full"
                         loading="lazy"
                         onError={(e) => {
                             e.currentTarget.src = 'https://via.placeholder.com/300x300?text=Error';

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ImageData, ImageGridProps } from '../types/image';
+import { generateImageUrlFromApi, generateImageDataUrlFromPoints } from '../utils/imageUtils';
 import SkeletonCard from './SkeletonCard';
+import { fetchPointData } from '../api/imageGenerator';
 
 const ImageGrid: React.FC<ImageGridProps> = ({
     totalCount: propTotalCount,
@@ -25,7 +27,6 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     const COLUMNS = columns;
     const ITEM_HEIGHT = 300;
     const GAP = 16;
-    const PADDING = 16;
     const OVERSCAN = 2;
 
     console.log('API Endpoint:', apiEndpoint);
@@ -62,8 +63,13 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         }
         try {
             setLoadingImages(prev => new Set(prev).add(imageId));
-            await new Promise(r => setTimeout(r, 300)); // Simulate API call
-            const url = `https://picsum.photos/300/300?random=${imageId}`;
+
+            //await new Promise(r => setTimeout(r, 100)); // Simulate API call
+            //const url = `https://picsum.photos/300/300?random=${imageId}`;
+            // const url = await generateImageUrlFromApi(apiEndpoint + `?id=${imageId}`);
+            const points = await fetchPointData(imageId);
+            const url = await generateImageDataUrlFromPoints(points);
+
             setImageCache(prev => new Map(prev).set(imageId, url));
             setLoadingImages(prev => {
                 const newSet = new Set(prev);
@@ -129,7 +135,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             loadVisibleImages();
         }
     }, [virtualItems, loadVisibleImages]);
-    
+
+
     const handleColumnsChange = useCallback((newColumns: number) => {
         setColumns(newColumns);
         // When columns change, virtualizer updates automatically due to changed `rowCount`
@@ -170,45 +177,53 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     return (
         <div className="w-full h-full">
             <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex justify-between items-start mb-3">
+                <div className="flex flex-wrap justify-between items-start gap-4 mb-2">
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">이미지 갤러리 (React Virtual)</h2>
-                        <p className="text-gray-600">총 {actualImageCount}개의 이미지 표시 중 • React Virtual로 성능 최적화</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                            캐시된 이미지: {imageCache.size} / 로딩 중: {loadingImages.size} / 렌더링된 행: {virtualItems.length}
-                        </p>
-                        <p className="text-sm text-blue-600 mt-1 font-medium">
-                            선택된 이미지: {selectedImages.size}개
-                        </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg font-semibold text-gray-800">
+                                이미지 <span className="text-blue-600">{actualImageCount}</span>개
+                            </span>
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                캐시 {imageCache.size}
+                            </span>
+                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                                로딩 {loadingImages.size}
+                            </span>
+                            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                                행 {virtualItems.length}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-blue-600 font-medium">
+                                선택 <span className="font-bold">{selectedImages.size}</span>개
+                            </span>
+
                             {selectedImages.size > 0 && (
                                 <button
                                     onClick={clearSelection}
-                                    className="px-3 py-1 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                                    className="ml-2 px-3 text-xs bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow"
                                 >
-                                    선택 해제 ({selectedImages.size})
+                                    선택 해제
                                 </button>
                             )}
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                            <label htmlFor="columns-select" className="text-sm font-medium text-gray-700">
-                                컬럼 수
-                            </label>
-                            <select
-                                id="columns-select"
-                                value={columns}
-                                onChange={(e) => handleColumnsChange(Number(e.target.value))}
-                                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                {[1, 2, 3, 4, 5, 6].map(num => (
-                                    <option key={num} value={num}>
-                                        {num}개
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="columns-select" className="text-sm font-medium text-gray-700 mr-2">
+                            컬럼
+                        </label>
+                        <select
+                            id="columns-select"
+                            value={columns}
+                            onChange={(e) => handleColumnsChange(Number(e.target.value))}
+                            className="px-3 py-1.5 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                        >
+                            {[1, 2, 3, 4, 5, 6].map(num => (
+                                <option key={num} value={num}>
+                                    {num}개
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
             </div>
