@@ -2,13 +2,12 @@ import { Suspense, useCallback, useState } from "react";
 import { fetchImageMetadata } from '../api/imageGenerator';
 import ImageGrid from "../components/ImageGrid";
 import DataGrid from "../components/DataGrid";
+import SearchTabs from "../components/SearchTabs";
 import { useImageDataStore } from '../store/useImageDataStore';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 
 function Home() {
     const {
-        totalCount,
-        images,
         filteredImages,
         filteredTotalCount,
         searchResults,
@@ -31,125 +30,94 @@ function Home() {
         applyFilter();
     }, [applyFilter]);
 
-    const [showDataGrid, setShowDataGrid] = useState(true);
+    const [showDataGrid, setShowDataGrid] = useState(true); return (
+        <Suspense fallback={<div className="loading loading-spinner loading-lg flex justify-center items-center min-h-screen">Loading...</div>}>
+            <div className="w-full min-h-screen bg-base-100 flex flex-col">
+                <div className="h-4" />                <div className="flex flex-1 p-4 gap-4">
+                    <SearchTabs onSearch={fetchData} />
 
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <div className="w-full h-[900px] flex-col justify-center items-center gap-2.5">
-                <div className="h-10 relative" />
-                <div className="flex flex-1 p-2.5 justify-start items-start gap-2.5">
-                    <div className="w-72 inline-flex flex-col justify-start items-center gap-2.5">
-                        <div className="self-stretch inline-flex justify-start items-center overflow-hidden">
-                            <div className="tabs tabs-lift">
-                                <input type="radio" name="my_tabs_3" className="tab" aria-label="일반 검색" defaultChecked />
-                                <div className="tab-content  bg-base-100 border-base-300 p-6">
-                                    <div className="self-stretch p-[5px] flex flex-col justify-start items-start gap-2.5 overflow-hidden">
-                                        <div className="justify-start text-lg font-bold ">기간</div>
-                                        <label className="input input-info">
-                                            <span className="label">시작</span>
-                                            <input type="date" defaultValue="2025-05-01" />
-                                        </label>
-                                        <label className="input input-info">
-                                            <span className="label">종료</span>
-                                            <input type="date" defaultValue="2025-05-10" />
-                                        </label>
-                                        <div className="justify-start text-lg font-bold ">파트(옵션)</div>
-                                        <label className="input input-info">
-                                            <input type="text" />
-                                        </label>
-                                        <button className="btn" onClick={fetchData}>검색</button>
-                                    </div>
-                                </div>
+                    <div className={`transition-all duration-300 overflow-hidden flex flex-col gap-4 ${showDataGrid ? 'max-w-md w-96 opacity-100' : 'max-w-0 w-0 opacity-0 pointer-events-none'}`}>
+                        <div className="card bg-base-200 h-full shadow-sm">
+                            <div className="card-body p-4 flex flex-col gap-1">
+                                <button
+                                    className="btn btn-ghost btn-sm flex items-center gap-2 justify-between"
+                                    onClick={() => setShowDataGrid((prev) => !prev)}
+                                >
+                                    <span className="font-medium">조회 내용</span>
+                                    {showDataGrid ? <IoChevronBack size={18} /> : <IoChevronForward size={18} />}
+                                </button>
 
-                                <input type="radio" name="my_tabs_3" className="tab" aria-label="LOT 검색" />
-                                <div className="tab-content bg-base-100 border-base-300 p-6">Tab content 2
-                                    <div className="self-stretch h-80 border border-info" />
-                                </div>
-
-                                <div className="w-full flex flex-col p-6 gap-2.5">
-                                    <div className="justify-start text-lg font-bold ">제품</div>
-                                    <select className="select select-info">
-                                        <option>V1</option>
-                                        <option>V2</option>
-                                        <option>V3</option>
-                                    </select>
-                                    <div className="justify-start text-lg font-bold ">스텝</div>
-                                    <select className="select select-info">
-                                        <option>H</option>
-                                        <option>C</option>
-                                        <option>L</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className={`transition-all duration-300 overflow-hidden flex flex-col justify-start items-center gap-2.5 outline-1 p-[5px] ${showDataGrid ? 'max-w-[400px] w-96 opacity-100' : 'max-w-0 w-0 opacity-0 pointer-events-none'}`}>
-                        <button
-                            className="flex items-center gap-2 w-full justify-center py-2 text-lg font-bold text-center select-none hover:bg-gray-100 rounded transition"
-                            onClick={() => setShowDataGrid((prev) => !prev)}
-                        >
-                            조회 내용
-                            {showDataGrid ? <IoChevronBack size={22} /> : <IoChevronForward size={22} />}
-                        </button>
-                        <div className={`w-full ${showDataGrid ? '' : 'hidden'}`}>
-                            {searchResults.length > 0 && (
-                                <div className="text-sm text-gray-600 mb-2">
+                                <div className="text-sm text-base-content/70 mb-3">
                                     총 {searchResults.length}개 항목 • 선택됨: {selectedGridItems.size}개
                                 </div>
-                            )}
-                            <DataGrid />
+
+                                <div className={`${showDataGrid ? 'flex-1' : 'hidden'}`}>
+
+                                    <DataGrid />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     {!showDataGrid && (
                         <button
-                            className="fixed left-2 top-1/2 z-50 bg-white border border-gray-300 rounded-full shadow p-2 flex items-center justify-center hover:bg-gray-100 transition"
+                            className="fixed left-4 top-1/2 z-50 btn btn-circle btn-sm btn-primary shadow-lg"
                             style={{ transform: 'translateY(-50%)' }}
                             onClick={() => setShowDataGrid(true)}
                             aria-label="조회 내용 열기"
                         >
-                            <IoChevronForward size={24} />
+                            <IoChevronForward size={18} />
                         </button>
-                    )}
-
-                    <div className="flex-1 flex flex-col outline-1">
-                        <div className="flex justify-center items-end gap-2.5">
-                            <div className="w-48 flex flex-col p-2">
-                                <div className="text-lg font-bold ">아이템</div>
-                                <select className="select select-info">
-                                    <option>BIN</option>
-                                    <option>MSR</option>
-                                    <option>...</option>
-                                </select>
-                            </div>
-                            <div className="w-48 flex flex-col p-2">
-                                <div className="text-lg font-bold ">하위 아이템</div>
-                                <select className="select select-info">
-                                    <option>000</option>
-                                    <option>001</option>
-                                    <option>002</option>
-                                </select>
-                            </div>
-                            <div className="w-48 flex flex-col p-2">
-                                <div className="text-lg font-bold ">통계</div>
-                                <select className="select select-info">
-                                    <option>MIN</option>
-                                    <option>MAX</option>
-                                    <option>MEAN</option>
-                                </select>
-                            </div>
-                            <div className="w-48 flex flex-col p-2">
-                                <div className="w-48">
-                                    <button className="btn btn-outline btn-info" onClick={handleDraw}>그리기</button>
+                    )}                    <div className="flex-1 flex flex-col">
+                        <div className="card bg-base-200 shadow-sm mb-4">
+                            <div className="card-body p-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div className="form-control">
+                                        <label className="label">
+                                            <span className="label-text font-medium">아이템</span>
+                                        </label>
+                                        <select className="select select-bordered select-primary">
+                                            <option>BIN</option>
+                                            <option>MSR</option>
+                                            <option>...</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-control">
+                                        <label className="label">
+                                            <span className="label-text font-medium">하위 아이템</span>
+                                        </label>
+                                        <select className="select select-bordered select-primary">
+                                            <option>000</option>
+                                            <option>001</option>
+                                            <option>002</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-control">
+                                        <label className="label">
+                                            <span className="label-text font-medium">통계</span>
+                                        </label>
+                                        <select className="select select-bordered select-primary">
+                                            <option>MIN</option>
+                                            <option>MAX</option>
+                                            <option>MEAN</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-control">
+                                        <label className="label">
+                                            <span className="label-text opacity-0">액션</span>
+                                        </label>
+                                        <button className="btn btn-primary" onClick={handleDraw}>그리기</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <ImageGrid
-                            totalCount={filteredTotalCount}
-                            images={filteredImages}
-                            cacheVersion={cacheVersion}
-                        />
+                        <div className="flex-1 bg-base-100">
+                            <ImageGrid
+                                totalCount={filteredTotalCount}
+                                images={filteredImages}
+                                cacheVersion={cacheVersion}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

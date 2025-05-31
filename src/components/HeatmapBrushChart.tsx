@@ -301,152 +301,61 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
             chartInstanceRef.current = null;
         };
     }, []); return (
-        <div style={{ width: '800px', position: 'relative' }}>
+        <div className="w-full max-w-5xl mx-auto">
+            <div ref={chartRef} className="w-full h-96 rounded-lg bg-base-100" />
 
-
-            <div ref={chartRef} style={{ width: '100%', height: '600px' }} />
-
-            <div style={{ marginTop: '20px' }}>                <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '10px'
-            }}>
-                <h3>Selected Cells ({selectedCellsRef.current.length}) {forceUpdate ? '' : ''}</h3>
-                <div>
+            <div className="mt-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium">
+                        선택된 셀 ({selectedCellsRef.current.length}) {forceUpdate ? '' : ''}
+                    </h3>
                     <button
                         onClick={handleClearAll}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            marginRight: '10px'
-                        }}
+                        className="btn btn-error btn-sm"
                         disabled={selectedCellsRef.current.length === 0}
                     >
-                        Clear All
+                        전체 지우기
                     </button>
                 </div>
-            </div>
 
                 {selectedCellsRef.current.length > 0 ? (
-                    <div style={{
-                        border: '1px solid #ddd',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        backgroundColor: 'white'
-                    }}>
-                        <table style={{
-                            width: '100%',
-                            borderCollapse: 'collapse',
-                            fontSize: '14px'
-                        }}>
+                    <div className="overflow-x-auto">
+                        <table className="table table-sm bg-base-100">
                             <thead>
-                                <tr style={{ backgroundColor: '#f8f9fa' }}>
-                                    <th style={{
-                                        padding: '12px',
-                                        textAlign: 'left',
-                                        borderBottom: '1px solid #ddd',
-                                        fontWeight: '600'
-                                    }}>
-                                        Index
-                                    </th>
-                                    <th style={{
-                                        padding: '12px',
-                                        textAlign: 'left',
-                                        borderBottom: '1px solid #ddd',
-                                        fontWeight: '600'
-                                    }}>
-                                        X Axis ({days.length > 0 ? days[0].replace(/\d+/, '') : 'X'})
-                                    </th>
-                                    <th style={{
-                                        padding: '12px',
-                                        textAlign: 'left',
-                                        borderBottom: '1px solid #ddd',
-                                        fontWeight: '600'
-                                    }}>
-                                        Y Axis ({hours.length > 0 ? hours[0].replace(/\d+/, '') : 'Y'})
-                                    </th>
-                                    <th style={{
-                                        padding: '12px',
-                                        textAlign: 'center',
-                                        borderBottom: '1px solid #ddd',
-                                        fontWeight: '600',
-                                        width: '80px'
-                                    }}>
-                                        Action
-                                    </th>
+                                <tr>
+                                    <th>Index</th>
+                                    <th>X Axis ({days.length > 0 ? days[0].replace(/\d+/, '') : 'X'})</th>
+                                    <th>Y Axis ({hours.length > 0 ? hours[0].replace(/\d+/, '') : 'Y'})</th>
+                                    <th className="w-20">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {selectedCellsRef.current.map((cell, index) => (<tr key={`${cell[0]}-${cell[1]}-${index}`}
-                                    style={{
-                                        borderBottom: index < selectedCellsRef.current.length - 1 ? '1px solid #eee' : 'none'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#f8f9fa';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = 'transparent';
-                                    }}
-                                >
-                                    <td style={{
-                                        padding: '12px',
-                                        color: '#666'
-                                    }}>
-                                        {index + 1}
-                                    </td>
-                                    <td style={{
-                                        padding: '12px',
-                                        fontWeight: '500'
-                                    }}>
-                                        {days[cell[0]]}
-                                    </td>
-                                    <td style={{
-                                        padding: '12px',
-                                        fontWeight: '500'
-                                    }}>
-                                        {hours[cell[1]]}
-                                    </td>
-                                    <td style={{
-                                        padding: '12px',
-                                        textAlign: 'center'
-                                    }}>
-                                        <button
-                                            onClick={() => handleRemoveCell(cell)}
-                                            style={{
-                                                padding: '4px 8px',
-                                                backgroundColor: '#dc3545',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '3px',
-                                                cursor: 'pointer',
-                                                fontSize: '12px',
-                                                fontWeight: '500'
-                                            }}
-                                            title="Remove this cell"
-                                        >
-                                            ×
-                                        </button>
-                                    </td>
-                                </tr>
+                                {selectedCellsRef.current.map((cell, index) => (
+                                    <tr key={`${cell[0]}-${cell[1]}-${index}`} className="hover">
+                                        <td className="text-base-content/70">{index + 1}</td>
+                                        <td className="font-medium">{days[cell[0]]}</td>
+                                        <td className="font-medium">{hours[cell[1]]}</td>
+                                        <td>
+                                            <button
+                                                onClick={() => handleRemoveCell(cell)}
+                                                className="btn btn-error btn-xs"
+                                                title="Remove this cell"
+                                            >
+                                                ×
+                                            </button>
+                                        </td>
+                                    </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 ) : (
-                    <div style={{
-                        padding: '40px',
-                        textAlign: 'center',
-                        color: '#666',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '8px',
-                        border: '1px solid #ddd'
-                    }}>
-                        No cells selected. Click on cells in the heatmap or use brush tool to select.
+                    <div className="card bg-base-200">
+                        <div className="card-body text-center py-12">
+                            <p className="text-base-content/70">
+                                선택된 셀이 없습니다. 히트맵에서 셀을 클릭하거나 브러시 도구를 사용하여 선택하세요.
+                            </p>
+                        </div>
                     </div>
                 )}
             </div>
