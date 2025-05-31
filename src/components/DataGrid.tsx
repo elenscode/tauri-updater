@@ -53,19 +53,17 @@ function DataGrid() {
         }
     }, [selectedGridItems]);    // Container: Defines the grid's theme & dimensions.
     return (
-        <div style={{ width: "100%", height: "720px" }}>
-            <AgGridReact
-                rowData={searchResults}
-                columnDefs={colDefs}
-                defaultColDef={defaultColDef}
-                rowSelection={{
-                    mode: "multiRow"
-                }}
-                onSelectionChanged={onSelectionChanged}
-                onGridReady={onGridReady}
-            />
-        </div>
-    );
+        <AgGridReact
+            rowData={searchResults}
+            columnDefs={colDefs}
+            defaultColDef={defaultColDef}
+            rowSelection={{
+                mode: "multiRow"
+            }}
+            onSelectionChanged={onSelectionChanged}
+            onGridReady={onGridReady}
+            className="w-full h-full"
+        />);
 }
 
 DataGrid.displayName = "DataGrid";
