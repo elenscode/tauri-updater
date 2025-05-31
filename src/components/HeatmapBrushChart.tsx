@@ -94,6 +94,7 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
     const chartInstanceRef = useRef<echarts.ECharts | null>(null);
     const selectedCellsRef = useRef<HeatmapDataItem[]>(initialSelectedCells);
     const [brushMode, setBrushMode] = React.useState<'select' | 'delete'>('select');
+    const [forceUpdate, setForceUpdate] = React.useState(0);
 
     // 초기 데이터 설정
     const hours = initialXAxisData || generateDefaultLabels(24, 'Y');
@@ -142,30 +143,29 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
         updateChartSelection();
     };
 
-    const handleBrushDelete = (params: any) => {
-        // 삭제 모드에서 브러시로 선택한 영역의 셀들을 제거
-        const areas = params.areas || (params.batch?.[0]?.areas);
-        if (!areas || areas.length === 0) return;
+    // const handleBrushDelete = (params: any) => {
+    //     // 삭제 모드에서 브러시로 선택한 영역의 셀들을 제거
+    //     const areas = params.areas || (params.batch?.[0]?.areas);
+    //     if (!areas || areas.length === 0) return;
 
-        const cellsToDelete = getSelectedCellsFromBrush(areas, rawData);
+    //     const cellsToDelete = getSelectedCellsFromBrush(areas, rawData);
 
-        // 선택된 셀들에서 삭제할 셀들을 제거
-        selectedCellsRef.current = selectedCellsRef.current.filter(selectedCell =>
-            !cellsToDelete.some(deleteCell =>
-                selectedCell[0] === deleteCell[0] && selectedCell[1] === deleteCell[1]
-            )
-        );
+    //     // 선택된 셀들에서 삭제할 셀들을 제거
+    //     selectedCellsRef.current = selectedCellsRef.current.filter(selectedCell =>
+    //         !cellsToDelete.some(deleteCell =>
+    //             selectedCell[0] === deleteCell[0] && selectedCell[1] === deleteCell[1]
+    //         )
+    //     );
 
-        // 브러시 영역 클리어
-        chartInstanceRef.current?.dispatchAction({
-            type: 'brush',
-            command: 'clear',
-            areas: []
-        });
+    //     // 브러시 영역 클리어
+    //     chartInstanceRef.current?.dispatchAction({
+    //         type: 'brush',
+    //         command: 'clear',
+    //         areas: []
+    //     });
 
-        updateChartSelection();
-    };
-
+    //     updateChartSelection();
+    // }; 
     const updateChartSelection = () => {
         chartInstanceRef.current?.setOption({
             series: [
@@ -184,6 +184,21 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                 }
             ]
         });
+        setForceUpdate(prev => prev + 1); // 테이블 리렌더링을 위한 상태 업데이트
+    };
+
+    // 개별 셀 삭제 함수
+    const handleRemoveCell = (cellToRemove: HeatmapDataItem) => {
+        selectedCellsRef.current = selectedCellsRef.current.filter(
+            cell => !(cell[0] === cellToRemove[0] && cell[1] === cellToRemove[1])
+        );
+        updateChartSelection();
+    };
+
+    // 모든 셀 삭제 함수
+    const handleClearAll = () => {
+        selectedCellsRef.current = [];
+        updateChartSelection();
     };
 
     // 차트 초기화
@@ -225,17 +240,13 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                 type: 'category',
                 data: days,
                 splitArea: { show: true }
-            },
-            toolbox: {
+            }, toolbox: {
                 feature: {
                     myTool1: {
                         show: true,
                         title: 'Clear Selection',
                         icon: 'image://https://echarts.apache.org/en/images/favicon.png',
-                        onclick: () => {
-                            selectedCellsRef.current = [];
-                            updateChartSelection();
-                        }
+                        onclick: handleClearAll
                     }
                 }
             },
@@ -289,30 +300,155 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
             chart.dispose();
             chartInstanceRef.current = null;
         };
-    }, []);
-
-    return (
+    }, []); return (
         <div style={{ width: '800px', position: 'relative' }}>
+
+
             <div ref={chartRef} style={{ width: '100%', height: '600px' }} />
-            <div style={{ marginTop: '20px' }}>
-                <h3>Selected Cells</h3>
-                <ul style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0
-                }}>
-                    {selectedCellsRef.current.map((cell, index) => (
-                        <li key={index} style={{
-                            padding: '5px',
-                            border: '1px solid #ddd',
+
+            <div style={{ marginTop: '20px' }}>                <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '10px'
+            }}>
+                <h3>Selected Cells ({selectedCellsRef.current.length}) {forceUpdate ? '' : ''}</h3>
+                <div>
+                    <button
+                        onClick={handleClearAll}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
                             borderRadius: '4px',
-                            marginBottom: '5px',
-                            backgroundColor: '#f9f9f9'
+                            cursor: 'pointer',
+                            marginRight: '10px'
+                        }}
+                        disabled={selectedCellsRef.current.length === 0}
+                    >
+                        Clear All
+                    </button>
+                </div>
+            </div>
+
+                {selectedCellsRef.current.length > 0 ? (
+                    <div style={{
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        backgroundColor: 'white'
+                    }}>
+                        <table style={{
+                            width: '100%',
+                            borderCollapse: 'collapse',
+                            fontSize: '14px'
                         }}>
-                            {days[cell[0]]} × {hours[cell[1]]}
-                        </li>
-                    ))}
-                </ul>
+                            <thead>
+                                <tr style={{ backgroundColor: '#f8f9fa' }}>
+                                    <th style={{
+                                        padding: '12px',
+                                        textAlign: 'left',
+                                        borderBottom: '1px solid #ddd',
+                                        fontWeight: '600'
+                                    }}>
+                                        Index
+                                    </th>
+                                    <th style={{
+                                        padding: '12px',
+                                        textAlign: 'left',
+                                        borderBottom: '1px solid #ddd',
+                                        fontWeight: '600'
+                                    }}>
+                                        X Axis ({days.length > 0 ? days[0].replace(/\d+/, '') : 'X'})
+                                    </th>
+                                    <th style={{
+                                        padding: '12px',
+                                        textAlign: 'left',
+                                        borderBottom: '1px solid #ddd',
+                                        fontWeight: '600'
+                                    }}>
+                                        Y Axis ({hours.length > 0 ? hours[0].replace(/\d+/, '') : 'Y'})
+                                    </th>
+                                    <th style={{
+                                        padding: '12px',
+                                        textAlign: 'center',
+                                        borderBottom: '1px solid #ddd',
+                                        fontWeight: '600',
+                                        width: '80px'
+                                    }}>
+                                        Action
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {selectedCellsRef.current.map((cell, index) => (<tr key={`${cell[0]}-${cell[1]}-${index}`}
+                                    style={{
+                                        borderBottom: index < selectedCellsRef.current.length - 1 ? '1px solid #eee' : 'none'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#f8f9fa';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                    }}
+                                >
+                                    <td style={{
+                                        padding: '12px',
+                                        color: '#666'
+                                    }}>
+                                        {index + 1}
+                                    </td>
+                                    <td style={{
+                                        padding: '12px',
+                                        fontWeight: '500'
+                                    }}>
+                                        {days[cell[0]]}
+                                    </td>
+                                    <td style={{
+                                        padding: '12px',
+                                        fontWeight: '500'
+                                    }}>
+                                        {hours[cell[1]]}
+                                    </td>
+                                    <td style={{
+                                        padding: '12px',
+                                        textAlign: 'center'
+                                    }}>
+                                        <button
+                                            onClick={() => handleRemoveCell(cell)}
+                                            style={{
+                                                padding: '4px 8px',
+                                                backgroundColor: '#dc3545',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '3px',
+                                                cursor: 'pointer',
+                                                fontSize: '12px',
+                                                fontWeight: '500'
+                                            }}
+                                            title="Remove this cell"
+                                        >
+                                            ×
+                                        </button>
+                                    </td>
+                                </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <div style={{
+                        padding: '40px',
+                        textAlign: 'center',
+                        color: '#666',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px solid #ddd'
+                    }}>
+                        No cells selected. Click on cells in the heatmap or use brush tool to select.
+                    </div>
+                )}
             </div>
         </div>
     );
