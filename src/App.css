@@ -1,5 +1,6 @@
 .container {
   margin: 0;
-  font-family: 'Noto Sans', sans-serif;
+  /* font-family: "Noto Sans KR", sans-serif; */
+  font-optical-sizing: auto;
   /* padding-top: 10vh; */
 }

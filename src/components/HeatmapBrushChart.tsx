@@ -45,7 +45,7 @@ const createDefaultData = (xAxisLength: number, yAxisLength: number): HeatmapDat
     const data: HeatmapDataItem[] = [];
     for (let x = 0; x < xAxisLength; x++) {
         for (let y = 0; y < yAxisLength; y++) {
-            data.push([x, y, Math.floor(Math.random() * 15)]);
+            data.push([x, y, 0]); // Math.floor(Math.random() * 15)]);
         }
     }
     return data;
@@ -68,7 +68,7 @@ const getSelectedCellsFromBrush = (areas: BrushArea[], rawData: HeatmapDataItem[
             rawData.forEach(cell => {
                 if (cell[0] >= xRange[0] && cell[0] <= xRange[1] &&
                     cell[1] >= yRange[0] && cell[1] <= yRange[1]) {
-                    selectedCells.push(cell);
+                    selectedCells.push([cell[0], cell[1], 1]);
                 }
             });
         } else if (area.brushType === 'polygon') {
@@ -97,8 +97,8 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
     const [forceUpdate, setForceUpdate] = React.useState(0);
 
     // 초기 데이터 설정
-    const hours = initialXAxisData || generateDefaultLabels(24, 'Y');
-    const days = initialYAxisData || generateDefaultLabels(7, 'X');
+    const yData = initialYAxisData || generateDefaultLabels(24, 'Y');
+    const xData = initialXAxisData || generateDefaultLabels(7, 'X');
     const rawData = initialData || createDefaultData(7, 24);
 
     // 이벤트 핸들러
@@ -108,7 +108,7 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
         );
 
         if (index === -1) {
-            selectedCellsRef.current.push(cell);
+            selectedCellsRef.current.push([cell[0], cell[1], 1]); // 선택된 셀에 1을 추가
         } else {
             selectedCellsRef.current.splice(index, 1);
         }
@@ -157,13 +157,6 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
     //         )
     //     );
 
-    //     // 브러시 영역 클리어
-    //     chartInstanceRef.current?.dispatchAction({
-    //         type: 'brush',
-    //         command: 'clear',
-    //         areas: []
-    //     });
-
     //     updateChartSelection();
     // }; 
     const updateChartSelection = () => {
@@ -177,10 +170,7 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                 {
                     type: 'heatmap',
                     data: selectedCellsRef.current,
-                    itemStyle: {
-                        borderColor: 'blue',
-                        borderWidth: 2
-                    }
+
                 }
             ]
         });
@@ -193,11 +183,26 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
             cell => !(cell[0] === cellToRemove[0] && cell[1] === cellToRemove[1])
         );
         updateChartSelection();
-    };
-
-    // 모든 셀 삭제 함수
+    };    // 모든 셀 삭제 함수
     const handleClearAll = () => {
         selectedCellsRef.current = [];
+
+        // 브러시 영역 클리어
+        chartInstanceRef.current?.dispatchAction({
+            type: 'brush',
+            command: 'clear',
+            areas: []
+        });
+
+        // 브러시 도구 비활성화 (rect 선택 모드 해제)
+        chartInstanceRef.current?.dispatchAction({
+            type: 'takeGlobalCursor',
+            key: 'brush',
+            brushOption: {
+                brushType: false
+            }
+        });
+
         updateChartSelection();
     };
 
@@ -227,18 +232,19 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                 formatter: (params: any): string => {
                     const item = params.data as HeatmapDataItem;
                     const isSelected = isSelectedCell(item, selectedCellsRef.current);
-                    return `${days[item[0]]},${hours[item[1]]}${isSelected ? ' (Selected)' : ''}`;
+                    return `${xData[item[0]]},${yData[item[1]]}${isSelected ? ' (Selected)' : ''}`;
                 }
             },
             grid: {
-                height: '60%',
-                top: '20%',
-                left: '10%',
-                right: '10%'
+                height: '80%',
+                width: '90%',
+                top: '10%',
+                left: '5%',
+                right: '5%'
             },
             xAxis: {
                 type: 'category',
-                data: days,
+                data: xData,
                 splitArea: { show: true }
             }, toolbox: {
                 feature: {
@@ -252,17 +258,21 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
             },
             yAxis: {
                 type: 'category',
-                data: hours,
+                data: yData,
                 splitArea: { show: true }
             },
             visualMap: {
-                show: false,
                 min: 0,
-                max: 15,
+                max: 1,
                 calculable: true,
                 orient: 'horizontal',
                 left: 'center',
-                bottom: '5%'
+                bottom: '1%',
+                type: 'piecewise',
+                pieces: [
+                    { value: 0, label: '전체', color: '#f5f5f5' },
+                    { value: 1, label: '선택', color: 'royalblue' }
+                ]
             },
             brush: {
                 toolbox: ['rect'],
@@ -278,18 +288,25 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                     label: { show: false },
                     emphasis: {
                         itemStyle: {
-                            shadowBlur: 10,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            color: "darkgrey",
                         }
+                    },
+                    itemStyle: {
+                        borderColor: 'grey',
+                        borderWidth: 0.3
                     }
                 },
                 {
                     type: 'heatmap',
                     data: selectedCellsRef.current,
                     itemStyle: {
-                        color: 'blue',
                         borderColor: 'blue',
-                        borderWidth: 2
+                        borderWidth: 1
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            color: 'deepskyblue',
+                        }
                     }
                 }
             ]
@@ -302,7 +319,7 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
         };
     }, []); return (
         <div className="w-full max-w-5xl mx-auto">
-            <div ref={chartRef} className="w-full h-96 rounded-lg bg-base-100" />
+            <div ref={chartRef} className="w-full h-[480px] rounded-lg bg-base-100" />
 
             <div className="mt-6">
                 <div className="flex justify-between items-center mb-4">
@@ -324,8 +341,8 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                             <thead>
                                 <tr>
                                     <th>Index</th>
-                                    <th>X Axis ({days.length > 0 ? days[0].replace(/\d+/, '') : 'X'})</th>
-                                    <th>Y Axis ({hours.length > 0 ? hours[0].replace(/\d+/, '') : 'Y'})</th>
+                                    <th>X({xData.length > 0 ? xData[0].replace(/\d+/, '') : 'X'})</th>
+                                    <th>Y({yData.length > 0 ? yData[0].replace(/\d+/, '') : 'Y'})</th>
                                     <th className="w-20">Action</th>
                                 </tr>
                             </thead>
@@ -333,12 +350,12 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                                 {selectedCellsRef.current.map((cell, index) => (
                                     <tr key={`${cell[0]}-${cell[1]}-${index}`} className="hover">
                                         <td className="text-base-content/70">{index + 1}</td>
-                                        <td className="font-medium">{days[cell[0]]}</td>
-                                        <td className="font-medium">{hours[cell[1]]}</td>
+                                        <td className="font-medium">{xData[cell[0]]}</td>
+                                        <td className="font-medium">{yData[cell[1]]}</td>
                                         <td>
                                             <button
                                                 onClick={() => handleRemoveCell(cell)}
-                                                className="btn btn-error btn-xs"
+                                                className="btn btn-error btn-outline btn-xs rounded-full"
                                                 title="Remove this cell"
                                             >
                                                 ×

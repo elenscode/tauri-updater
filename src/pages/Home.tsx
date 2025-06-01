@@ -33,7 +33,7 @@ function Home() {
     const [showDataGrid, setShowDataGrid] = useState(true); return (
         <Suspense fallback={<div className="loading loading-spinner loading-lg flex justify-center items-center min-h-screen">Loading...</div>}>
             <div className="w-full min-h-screen bg-base-100 flex flex-col">
-                <div className="h-4" />                <div className="flex flex-1 p-4 gap-4">
+                <div className="flex flex-1 p-4 gap-4">
                     <SearchTabs onSearch={fetchData} />
 
                     <div className={`transition-all duration-300 overflow-hidden flex flex-col gap-4 ${showDataGrid ? 'max-w-md w-96 opacity-100' : 'max-w-0 w-0 opacity-0 pointer-events-none'}`}>

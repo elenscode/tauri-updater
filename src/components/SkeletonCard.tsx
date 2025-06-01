@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ImageData } from '../types/image';
-
+import { CiCircleChevDown } from "react-icons/ci";
 interface SkeletonCardProps {
     imageData: ImageData;
     isLoading: boolean;
@@ -19,13 +19,13 @@ const SkeletonCard: React.FC<SkeletonCardProps> = React.memo(({
     const hasUrl = Boolean(cachedUrl || imageData.url);
     const imageUrl = cachedUrl || imageData.url; return (
         <div
-            className={`relative bg-gray-200 rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg cursor-pointer ${isSelected ? 'ring-4 ring-blue-500' : ''
+            className={`relative bg-gray-100 rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg cursor-pointer ${isSelected ? 'ring-2 ring-blue-500' : ''
                 }`}
             onClick={onToggleSelection}
         >
             {isSelected && (
-                <div className="absolute top-2 left-2 z-20 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-                    ✓
+                <div className="absolute top-2 left-2 z-20 text-primary rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                    <CiCircleChevDown className='w-full h-full' />
                 </div>
             )}
             {hasUrl ? (
@@ -40,7 +40,7 @@ const SkeletonCard: React.FC<SkeletonCardProps> = React.memo(({
                         }}
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                        <p className="text-white text-sm font-medium truncate">{imageData.name}</p>
+                        <p className="text-sm font-medium truncate">{imageData.name}</p>
                     </div>
                 </div>
             ) : (
@@ -53,7 +53,7 @@ const SkeletonCard: React.FC<SkeletonCardProps> = React.memo(({
                     </div>
                     {isLoading && (
                         <div className="absolute top-2 right-2">
-                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                         </div>
                     )}
                 </div>
