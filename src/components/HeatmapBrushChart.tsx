@@ -26,7 +26,7 @@ echarts.use([
 
 
 // Heatmap 데이터 타입
-type HeatmapDataItem = [number, number, number];
+export type HeatmapDataItem = [number, number, number];
 
 type BrushArea = {
     brushType: string;
@@ -92,8 +92,8 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
 }) => {
     const chartRef = useRef<HTMLDivElement>(null);
     const chartInstanceRef = useRef<echarts.ECharts | null>(null);
-    const selectedCellsRef = useRef<HeatmapDataItem[]>(initialSelectedCells);
-    const [brushMode, setBrushMode] = React.useState<'select' | 'delete'>('select');
+    const selectedCellsRef = useRef<HeatmapDataItem[]>([...initialSelectedCells]);
+    const [brushMode] = React.useState<'select' | 'delete'>('select');
     const [forceUpdate, setForceUpdate] = React.useState(0);
 
     // 초기 데이터 설정
@@ -301,6 +301,7 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                     data: selectedCellsRef.current,
                     itemStyle: {
                         borderColor: 'blue',
+                        opacity: 0.8,
                         borderWidth: 1
                     },
                     emphasis: {

@@ -19,7 +19,7 @@ const SkeletonCard: React.FC<SkeletonCardProps> = React.memo(({
     const hasUrl = Boolean(cachedUrl || imageData.url);
     const imageUrl = cachedUrl || imageData.url; return (
         <div
-            className={`relative bg-gray-100 rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg cursor-pointer ${isSelected ? 'ring-2 ring-blue-500' : ''
+            className={`relative rounded-lg overflow-hidden shadow-md hover:shadow-lg cursor-pointer ${isSelected ? 'ring-3 ring-info' : ''
                 }`}
             onClick={onToggleSelection}
         >
