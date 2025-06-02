@@ -123,7 +123,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         if (imagesToLoad.length === 0) return;
         console.log(`Loading ${imagesToLoad.length} images...`);
 
-        const loadPromises = imagesToLoad.slice(0, 20).map(async (imageId) => {
+        const loadPromises = imagesToLoad.slice(0, 10).map(async (imageId) => {
             try {
                 const url = await fetchImageUrl(imageId);
                 if (url) {

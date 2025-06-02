@@ -319,7 +319,7 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
             chartInstanceRef.current = null;
         };
     }, []); return (
-        <div className="w-full max-w-5xl mx-auto">
+        <div className="w-full">
             <div ref={chartRef} className="w-full h-[480px] rounded-lg bg-base-100" />
 
             <div className="mt-6">

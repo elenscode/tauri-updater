@@ -39,7 +39,7 @@ const SkeletonCard: React.FC<SkeletonCardProps> = React.memo(({
                             e.currentTarget.src = 'https://via.placeholder.com/300x300?text=Error';
                         }}
                     />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/10 to-transparent p-3">
                         <p className="text-sm font-medium truncate">{imageData.name}</p>
                     </div>
                 </div>

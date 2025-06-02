@@ -15,7 +15,7 @@ const Draw: React.FC = () => {
             <div className="flex flex-1 p-4 gap-4">
                 <SearchTabs onSearch={handleSearch} />
 
-                <div className="flex-1 flex justify-center">
+                <div className="flex justify-center w-xl">
                     <div className="card bg-base-200 shadow-sm w-full max-w-6xl">
                         <div className="card-body p-6">
                             <div className="w-full">
