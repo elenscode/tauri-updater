@@ -21,9 +21,13 @@ export function useSearchAction<T, P>(
 
     const execute = useCallback(
         (params: P) => {
-            startTransition(async () => {
-                setState(prev => ({ ...prev, isLoading: true, error: undefined }));
+            setState(prev => ({ ...prev, isLoading: true, error: undefined }));
 
+            startTransition(() => {
+                // The transition is for the state update, not the async logic
+            });
+
+            (async () => {
                 try {
                     const result = await action(params);
                     setState({
@@ -36,7 +40,7 @@ export function useSearchAction<T, P>(
                         isLoading: false,
                     });
                 }
-            });
+            })();
         },
         [action]
     );

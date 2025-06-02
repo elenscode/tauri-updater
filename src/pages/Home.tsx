@@ -31,7 +31,7 @@ function Home() {
     }, [applyFilter]);
 
     const [showDataGrid, setShowDataGrid] = useState(true); return (
-        <Suspense fallback={<div className="loading loading-spinner loading-lg flex justify-center items-center min-h-screen">Loading...</div>}>
+        <Suspense fallback={<div className="loadingrmflr loading-spinner loading-lg flex justify-center items-center min-h-screen">Loading...</div>}>
             <div className="w-full min-h-screen bg-base-100 flex flex-col">
                 <div className="flex flex-1 p-4 gap-4">
                     <SearchTabs onSearch={fetchData} />

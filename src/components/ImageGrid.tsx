@@ -6,6 +6,7 @@ import { generateImageDataUrlFromPoints } from '../utils/imageUtils';
 import SkeletonCard from './SkeletonCard';
 import { fetchPointData } from '../api/imageGenerator';
 import { usePatternStore } from '../store/usePatternStore';
+import { cacheImageFeatures } from '../api/similarityApi';
 
 const ImageGrid: React.FC<ImageGridProps> = ({
     totalCount: propTotalCount,
@@ -53,9 +54,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             imageCacheRef.current = new Map();
             loadingImagesRef.current = new Set();
         }
-    }, [cacheVersion]);
-
-    const fetchImageUrl = useCallback(async (imageId: string): Promise<string> => {
+    }, [cacheVersion]); const fetchImageUrl = useCallback(async (imageId: string): Promise<string> => {
         if (imageCacheRef.current.has(imageId)) {
             return imageCacheRef.current.get(imageId)!;
         }
@@ -75,6 +74,19 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             // const url = await generateImageUrlFromApi(apiEndpoint + `?id=${imageId}`);
             const points = await fetchPointData(imageId);
             const url = await generateImageDataUrlFromPoints(points);
+
+            // Cache features in Rust backend for similarity calculation
+            try {
+                const pointsArray: Array<[number, number, number]> = points.map(p => [
+                    parseFloat(p.x.toString()),
+                    parseFloat(p.y.toString()),
+                    parseFloat(p.value)
+                ]);
+                await cacheImageFeatures(imageId, pointsArray);
+                console.log(`Features cached for image: ${imageId}`);
+            } catch (error) {
+                console.warn(`Failed to cache features for image ${imageId}:`, error);
+            }
 
             setImageCache(prev => new Map(prev).set(imageId, url));
             setLoadingImages(prev => {
@@ -209,9 +221,6 @@ const ImageGrid: React.FC<ImageGridProps> = ({
                         </span>
                         <span className="alert alert-info alert-outline text-sm rounded-full">
                             로딩 {loadingImages.size}
-                        </span>
-                        <span className="alert alert-warning alert-outline text-sm rounded-full">
-                            행 {virtualItems.length}
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
