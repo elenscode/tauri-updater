@@ -14,7 +14,7 @@ const fetchImageMetadata = async (): Promise<{ totalCount: number; images: Image
     return { totalCount, images };
 };
 
-const fetchPointData = async (imageId: string): Promise<PointData[]> => {
+const fetchPointData = async (_imageId: string): Promise<PointData[]> => {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     // x, y 범위 지정

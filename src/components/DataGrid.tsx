@@ -1,14 +1,25 @@
-import { useMemo, useCallback } from "react";
-import type { ColDef } from "ag-grid-community";
+import React, { useMemo, useCallback } from "react";
+import { ColDef, colorSchemeDarkBlue, themeMaterial } from "ag-grid-community";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
+
 import { AgGridReact } from "ag-grid-react";
 import { ImageData } from '../types/image';
 import { useImageDataStore } from '../store/useImageDataStore';
+import { useTheme } from "../hooks/useTheme";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
+const DataGrid = React.memo(() => {
 
-function DataGrid() {
-    const { searchResults, selectedGridItems, setSelectedGridItems } = useImageDataStore();
+    const { theme } = useTheme();
+    // Custom Theme: Defines the grid's theme.
+    const customTheme = useMemo(() => {
+        return theme === 'dark' ? themeMaterial.withPart(colorSchemeDarkBlue) : themeMaterial;
+    }, [theme]);
+
+    // DataGrid에 필요한 상태만 선택적으로 구독
+    const searchResults = useImageDataStore(state => state.searchResults);
+    const selectedGridItems = useImageDataStore(state => state.selectedGridItems);
+    const setSelectedGridItems = useImageDataStore(state => state.setSelectedGridItems);
 
     // Column Definitions: Defines & controls grid columns.
     const colDefs = useMemo<ColDef<ImageData>[]>(() => [
@@ -60,11 +71,11 @@ function DataGrid() {
             rowSelection={{
                 mode: "multiRow"
             }}
+            theme={customTheme}
             onSelectionChanged={onSelectionChanged}
             onGridReady={onGridReady}
-            className="w-full h-full"
-        />);
-}
+            className="w-full h-full" />);
+});
 
 DataGrid.displayName = "DataGrid";
 export default DataGrid;

@@ -319,10 +319,10 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
             chartInstanceRef.current = null;
         };
     }, []); return (
-        <div className="w-full">
+        <>
             <div ref={chartRef} className="w-full h-[480px] rounded-lg bg-base-100" />
 
-            <div className="mt-6">
+            <div className="mt-6 h-[600px] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">
                         선택된 셀 ({selectedCellsRef.current.length}) {forceUpdate ? '' : ''}
@@ -337,7 +337,7 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                 </div>
 
                 {selectedCellsRef.current.length > 0 ? (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto ">
                         <table className="table table-sm bg-base-100">
                             <thead>
                                 <tr>
@@ -377,7 +377,7 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
                     </div>
                 )}
             </div>
-        </div>
+        </>
     );
 };
 

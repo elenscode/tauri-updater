@@ -1,11 +1,19 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { IoSunny, IoMoon } from 'react-icons/io5';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { IoSunny, IoMoon, IoLogOut } from 'react-icons/io5';
 import { useTheme } from '../hooks/useTheme';
+import { useAuthStore } from '../store/useAuthStore';
 
 const Navigation: React.FC = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { theme, toggleTheme } = useTheme();
+    const { logout } = useAuthStore();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     return (
         <div className="navbar bg-base-100 shadow-lg">
@@ -58,10 +66,7 @@ const Navigation: React.FC = () => {
                         </Link>
                     </li>
                 </ul>
-            </div>
-
-            <div className="navbar-end">
-                {/* Theme Controller using a toggle with icons inside */}
+            </div>            <div className="navbar-end gap-2">
                 <label className="flex cursor-pointer items-center gap-2">
                     <IoSunny className="h-4 w-4" />
                     <input
@@ -72,6 +77,15 @@ const Navigation: React.FC = () => {
                     />
                     <IoMoon className="h-4 w-4" />
                 </label>
+
+                <button
+                    onClick={handleLogout}
+                    className="btn btn-ghost btn-sm"
+                    title="로그아웃"
+                >
+                    <IoLogOut className="h-4 w-4" />
+                    로그아웃
+                </button>
             </div>
         </div>
     );

@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useState, useMemo } from "react";
 import { fetchImageMetadata } from '../api/imageGenerator';
 import ImageGrid from "../components/ImageGrid";
 import DataGrid from "../components/DataGrid";
@@ -7,15 +7,13 @@ import { useImageDataStore } from '../store/useImageDataStore';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 
 function Home() {
-    const {
-        filteredImages,
-        filteredTotalCount,
-        searchResults,
-        selectedGridItems,
-        cacheVersion,
-        setImageData,
-        applyFilter
-    } = useImageDataStore();
+    // 필요한 상태만 선택적으로 구독
+    const filteredImages = useImageDataStore(state => state.filteredImages);
+    const filteredTotalCount = useImageDataStore(state => state.filteredTotalCount);
+    const searchResults = useImageDataStore(state => state.searchResults);
+    const selectedGridItems = useImageDataStore(state => state.selectedGridItems);
+    const cacheVersion = useImageDataStore(state => state.cacheVersion);
+    const setImageData = useImageDataStore(state => state.setImageData);
 
     const fetchData = useCallback(async () => {
         try {
@@ -26,13 +24,18 @@ function Home() {
         }
     }, [setImageData]);
 
-    const handleDraw = useCallback(() => {
-        applyFilter();
-    }, [applyFilter]);
 
-    const [showDataGrid, setShowDataGrid] = useState(true); return (
+    const [showDataGrid, setShowDataGrid] = useState(true);    // DataGrid를 메모이제이션하여 불필요한 리렌더링 방지 (searchResults와 selectedGridItems 변경 시에만 재렌더링)
+    const memoizedDataGrid = useMemo(() => <DataGrid />, [searchResults.length, selectedGridItems.size]);
+
+    // ImageGrid props를 메모이제이션
+    const imageGridProps = useMemo(() => ({
+        totalCount: filteredTotalCount,
+        images: filteredImages,
+        cacheVersion: cacheVersion
+    }), [filteredTotalCount, filteredImages, cacheVersion]); return (
         <Suspense fallback={<div className="loadingrmflr loading-spinner loading-lg flex justify-center items-center min-h-screen">Loading...</div>}>
-            <div className="w-full min-h-screen bg-base-100 flex flex-col">
+            <div className="w-full bg-base-100 flex flex-col">
                 <div className="flex flex-1 p-4 gap-4">
                     <SearchTabs onSearch={fetchData} />
 
@@ -49,11 +52,8 @@ function Home() {
 
                                 <div className="text-sm text-base-content/70 mb-3">
                                     총 {searchResults.length}개 항목 • 선택됨: {selectedGridItems.size}개
-                                </div>
-
-                                <div className={`${showDataGrid ? 'flex-1' : 'hidden'}`}>
-
-                                    <DataGrid />
+                                </div>                                <div className={`${showDataGrid ? 'flex-1' : 'hidden'}`}>
+                                    {memoizedDataGrid}
                                 </div>
                             </div>
                         </div>
@@ -68,54 +68,12 @@ function Home() {
                         >
                             <IoChevronForward size={18} />
                         </button>
-                    )}                    <div className="flex-1 flex flex-col">
-                        <div className="card bg-base-200 shadow-sm mb-4">
-                            <div className="card-body p-4">
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <div className="form-control">
-                                        <label className="label">
-                                            <span className="label-text font-medium">아이템</span>
-                                        </label>
-                                        <select className="select select-bordered select-primary">
-                                            <option>BIN</option>
-                                            <option>MSR</option>
-                                            <option>...</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-control">
-                                        <label className="label">
-                                            <span className="label-text font-medium">하위 아이템</span>
-                                        </label>
-                                        <select className="select select-bordered select-primary">
-                                            <option>000</option>
-                                            <option>001</option>
-                                            <option>002</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-control">
-                                        <label className="label">
-                                            <span className="label-text font-medium">통계</span>
-                                        </label>
-                                        <select className="select select-bordered select-primary">
-                                            <option>MIN</option>
-                                            <option>MAX</option>
-                                            <option>MEAN</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-control">
-                                        <label className="label">
-                                            <span className="label-text opacity-0">액션</span>
-                                        </label>
-                                        <button className="btn btn-primary" onClick={handleDraw}>그리기</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    )}
+                    <div className="flex-1 flex flex-col">
+
                         <div className="flex-1 bg-base-100">
                             <ImageGrid
-                                totalCount={filteredTotalCount}
-                                images={filteredImages}
-                                cacheVersion={cacheVersion}
+                                {...imageGridProps}
                             />
                         </div>
                     </div>
