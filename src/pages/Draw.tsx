@@ -9,15 +9,12 @@ const Draw: React.FC = () => {
         console.log('Draw 페이지에서 검색 실행');
     };
     const { patternData, selectedData, xAxisLabels, yAxisLabels } = usePatternStore();
-
-
     return (
-        <div className="w-full min-h-screen bg-base-100 flex flex-col">
-            <div className="flex flex-1 p-4 gap-4">
+        <div className="w-full h-full bg-base-100 flex flex-col overflow-hidden">
+            <div className="flex flex-1 p-4 gap-4 overflow-hidden">
                 <SearchTabs onSearch={handleSearch} />
 
-                <div className="flex flex-1 gap-4 w-xl">
-                    {/* Heatmap Chart */}
+                <div className="flex flex-1 gap-4 w-xl overflow-auto">{/* Heatmap Chart */}
                     <div className="card bg-base-200 shadow-sm w-md">
                         <div className="card-body p-6">
                             <HeatmapBrushChart

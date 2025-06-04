@@ -83,6 +83,7 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
                     parseFloat(p.y.toString()),
                     parseFloat(p.value)
                 ]);
+
                 await cacheImageFeatures(imageId, pointsArray);
                 console.log(`Features cached for image: ${imageId}`);
             } catch (error) {
@@ -273,7 +274,7 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="text-gray-600">이미지 데이터를 기다리는 중...</p>
                 </div>
             </div>
@@ -282,31 +283,30 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
 
     return (
         <div className="w-full h-full">
-            <div className="mb-4 p-4 shadow-sm rounded-lg">
+            <div className="p-4 shadow-sm rounded-lg">
                 <div className="flex flex-wrap justify-between items-start gap-4 mb-2">
                     <div className="flex items-center gap-2">
-                        <span className="badge badge-outline badge-primary">
+                        <div className="p-4 text-sm text-primary" role="alert">
                             이미지{actualImageCount} 개
-                        </span>
-                        <span className="badge badge-outline badge-success">
+                        </div>
+                        <div className="p-4 text-sm text-primary" role="alert">
                             캐시 {imageCache.size}
-                        </span>
-                        <span className="badge badge-outline badge-warning">
+                        </div>
+                        <div className="p-4 text-sm text-primary" role="alert">
                             로딩 {loadingImages.size}
-                        </span>
-
+                        </div>
+                        <div className="p-4 text-sm text-primary" role="alert">
+                            선택 {selectedImages.size}개
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="badge badge-outline badge-info">
-                            선택 {selectedImages.size}개
-                        </span>
-                        <button className="btn btn-xs btn-primary"
+                        <button className="btn btn-sm btn-primary rounded-full"
                             onClick={clearSelection}
                             disabled={selectedImages.size === 0}
                         >선택 해제</button>                        <button
                             onClick={handleCreatePattern}
                             disabled={selectedImages.size === 0 || isCreatingPattern}
-                            className="btn btn-xs btn-primary"
+                            className="btn btn-sm btn-primary rounded-full"
                         >
                             {isCreatingPattern ? (
                                 <>
@@ -321,7 +321,7 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
                         <button
                             onClick={handleAnalyzeSimilarity}
                             disabled={selectedImages.size === 0 || isCreatingPattern}
-                            className="btn btn-xs btn-secondary"
+                            className="btn btn-sm btn-secondary rounded-full"
                         >
                             {isCreatingPattern ? (
                                 <>

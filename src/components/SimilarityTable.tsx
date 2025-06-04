@@ -68,15 +68,15 @@ const SimilarityTable: React.FC<SimilarityTableProps> = ({
         return (
             <div className="flex flex-col items-center justify-center min-h-[300px] bg-base-100 rounded-xl shadow-md p-8">
                 <div className="flex flex-col items-center">
-                    <div className="text-gray-400 mb-4">
+                    <div className="mb-4">
                         <svg className="mx-auto h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">유사도 분석</h3>
-                    <p className="text-gray-500 mb-2">이미지를 선택하면 유사한 이미지들을 테이블로 보여드립니다.</p>
+                    <h3 className="text-xl font-semibold text-primary mb-2">유사도 분석</h3>
+                    <p className="mb-2">이미지를 선택하면 유사한 이미지들을 테이블로 보여드립니다.</p>
                     {cacheStatus && (
-                        <div className="mt-2 text-sm text-gray-400">
+                        <div className="mt-2 text-sm">
                             캐시된 이미지: <span className="font-semibold text-blue-600">{cacheStatus.count}</span>개
                         </div>
                     )}
@@ -90,8 +90,8 @@ const SimilarityTable: React.FC<SimilarityTableProps> = ({
             {/* Header */}
             <div className="bg-base-100 rounded-xl shadow p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-1">유사도 분석 결과</h3>
-                    <p className="text-sm text-gray-500">
+                    <h3 className="text-2xl font-bold mb-1">유사도 분석 결과</h3>
+                    <p className="text-sm ">
                         선택된 <span className="font-semibold text-blue-600">{selectedImageIds.length}</span>개 이미지와 유사한 이미지들
                     </p>
                 </div>
@@ -129,10 +129,10 @@ const SimilarityTable: React.FC<SimilarityTableProps> = ({
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-base-200">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">순위</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">이미지 ID</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">유사도</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">작업</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">순위</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">이미지 ID</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">유사도</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">작업</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -141,7 +141,7 @@ const SimilarityTable: React.FC<SimilarityTableProps> = ({
                                         <td className="px-4 py-2 font-medium">
                                             <span className="badge badge-outline bg-base-200">{index + 1}</span>
                                         </td>
-                                        <td className="px-4 py-2 font-mono text-sm text-gray-700">
+                                        <td className="px-4 py-2 font-mono text-sm">
                                             {result.image_id}
                                         </td>
                                         <td className={getSimilarityColor(result.similarity) + ' px-4 py-2 text-sm'}>
