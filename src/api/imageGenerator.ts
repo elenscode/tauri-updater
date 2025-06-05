@@ -4,7 +4,7 @@ import { ImageData, PointData } from '../types/image';
 const fetchImageMetadata = async (): Promise<{ totalCount: number; images: ImageData[] }> => {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const totalCount = 1000;
+    const totalCount = 200;
     const images: ImageData[] = Array.from({ length: totalCount }, (_, index) => ({
         id: `image-${index + 1}`,
         key: `key-${index + 1000}`,

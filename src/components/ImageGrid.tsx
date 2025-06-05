@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useNavigate } from 'react-router-dom';
 import type { ImageData, ImageGridProps } from '../types/image';
-import { generateImageUrlFromApi, generateImageDataUrlFromPoints } from '../utils/imageUtils';
+import { generateImageDataUrlFromPoints } from '../utils/imageUtils';
 import SkeletonCard from './SkeletonCard';
 import { fetchPointData } from '../api/imageGenerator';
+import { usePatternStore } from '../store/usePatternStore';
 
 const ImageGrid: React.FC<ImageGridProps> = ({
     totalCount: propTotalCount,
@@ -15,6 +17,10 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
     const [columns, setColumns] = useState(3);
     const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
+    const [isCreatingPattern, setIsCreatingPattern] = useState(false);
+
+    const navigate = useNavigate();
+    const { generatePatternFromImages, threshold } = usePatternStore();
 
     const totalCount = propTotalCount;
     const images = propImages;
@@ -156,11 +162,27 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             }
             return newSet;
         });
-    }, []);
-
-    const clearSelection = useCallback(() => {
+    }, []); const clearSelection = useCallback(() => {
         setSelectedImages(new Set());
     }, []);
+
+    const handleCreatePattern = useCallback(async () => {
+        if (selectedImages.size === 0) return;
+
+        setIsCreatingPattern(true);
+        try {
+            const selectedImageIds = Array.from(selectedImages);
+            await generatePatternFromImages(selectedImageIds, threshold);
+
+            // 패턴 생성 완료 후 Draw 페이지로 이동
+            navigate('/draw');
+        } catch (error) {
+            console.error('패턴 생성 중 오류 발생:', error);
+            alert('패턴 생성 중 오류가 발생했습니다.');
+        } finally {
+            setIsCreatingPattern(false);
+        }
+    }, [selectedImages, threshold, generatePatternFromImages, navigate]);
 
 
     if (totalCount === 0 || images.length === 0) {
@@ -176,40 +198,53 @@ const ImageGrid: React.FC<ImageGridProps> = ({
 
     return (
         <div className="w-full h-full">
-            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+            <div className="mb-4 p-4 bg-base-200 shadow-sm rounded-lg">
                 <div className="flex flex-wrap justify-between items-start gap-4 mb-2">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg font-semibold text-gray-800">
-                                이미지 <span className="text-blue-600">{actualImageCount}</span>개
-                            </span>
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                캐시 {imageCache.size}
-                            </span>
-                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
-                                로딩 {loadingImages.size}
-                            </span>
-                            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
-                                행 {virtualItems.length}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-blue-600 font-medium">
-                                선택 <span className="font-bold">{selectedImages.size}</span>개
-                            </span>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="alert alert-info text-sm rounded-full">
+                            이미지{actualImageCount} 개
+                        </span>
+                        <span className="alert alert-success text-sm rounded-full">
+                            캐시 {imageCache.size}
+                        </span>
+                        <span className="alert alert-info alert-outline text-sm rounded-full">
+                            로딩 {loadingImages.size}
+                        </span>
+                        <span className="alert alert-warning alert-outline text-sm rounded-full">
+                            행 {virtualItems.length}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="alert alert-info alert-outline text-sm rounded-full">
+                            선택 <span className="font-bold">{selectedImages.size}</span>개
+                        </span>
 
-                            {selectedImages.size > 0 && (
-                                <button
-                                    onClick={clearSelection}
-                                    className="ml-2 px-3 text-xs bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow"
-                                >
-                                    선택 해제
-                                </button>
-                            )}
+
+                        <div className='flex items-center gap-2'>                            <button
+                            onClick={clearSelection}
+                            disabled={selectedImages.size === 0}
+                            className="btn btn-info rounded-full shadow hover:cursor-pointer"
+                        >
+                            선택 해제
+                        </button>
+                            <button
+                                onClick={handleCreatePattern}
+                                disabled={selectedImages.size === 0 || isCreatingPattern}
+                                className="btn btn-primary rounded-full shadow hover:cursor-pointer"
+                            >
+                                {isCreatingPattern ? (
+                                    <>
+                                        <span className="loading loading-spinner loading-sm"></span>
+                                        패턴 생성 중...
+                                    </>
+                                ) : (
+                                    '패턴 만들기'
+                                )}
+                            </button>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <label htmlFor="columns-select" className="text-sm font-medium text-gray-700 mr-2">
+                        <label htmlFor="columns-select" className="font-medium text-gray-700 mr-2">
                             컬럼
                         </label>
                         <select
