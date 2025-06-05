@@ -12,14 +12,13 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
     totalCount: propTotalCount,
     images: propImages,
     apiEndpoint = '/api/images',
-    cacheVersion = 0
+    cacheVersion = 0,
+    onSimilarityAnalysis
 }) => {
     const [imageCache, setImageCache] = useState<Map<string, string>>(new Map());
     const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set()); const [columns, setColumns] = useState(3);
     const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
     const [isCreatingPattern, setIsCreatingPattern] = useState(false);
-    const [isSimilarityWindowOpen, setIsSimilarityWindowOpen] = useState(false);
-    const similarityWindowRef = useRef<Window | null>(null);
 
     const navigate = useNavigate();
     const { generatePatternFromImages, threshold } = usePatternStore();
@@ -66,8 +65,7 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
         if (imageData && imageData.url) {
             setImageCache(prev => new Map(prev).set(imageId, imageData.url!));
             return imageData.url;
-        }
-        try {
+        } try {
             setLoadingImages(prev => new Set(prev).add(imageId));
 
             //await new Promise(r => setTimeout(r, 100)); // Simulate API call
@@ -75,7 +73,6 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
             // const url = await generateImageUrlFromApi(apiEndpoint + `?id=${imageId}`);
             const points = await fetchPointData(imageId);
             const url = await generateImageDataUrlFromPoints(points);
-
             // Cache features in Rust backend for similarity calculation
             try {
                 const pointsArray: Array<[number, number, number]> = points.map(p => [
@@ -193,9 +190,7 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
         } finally {
             setIsCreatingPattern(false);
         }
-    }, [selectedImages, threshold, generatePatternFromImages, navigate]);
-
-    const handleAnalyzeSimilarity = useCallback(async () => {
+    }, [selectedImages, threshold, generatePatternFromImages, navigate]); const handleAnalyzeSimilarity = useCallback(async () => {
         if (selectedImages.size === 0) return;
 
         setIsCreatingPattern(true);
@@ -203,71 +198,17 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
             const selectedImageIds = Array.from(selectedImages);
             await generatePatternFromImages(selectedImageIds, threshold);
 
-            // 패턴 생성 완료 후 브라우저 새창에서 유사도 분석 테이블 오픈
-            setIsSimilarityWindowOpen(true);
+            // 패턴 생성 완료 후 Gallery의 콜백 호출
+            if (onSimilarityAnalysis) {
+                onSimilarityAnalysis(selectedImageIds);
+            }
         } catch (error) {
             console.error('패턴 생성 중 오류 발생:', error);
             alert('패턴 생성 중 오류가 발생했습니다.');
         } finally {
             setIsCreatingPattern(false);
         }
-    }, [selectedImages, threshold, generatePatternFromImages]);
-
-
-    useEffect(() => {
-        if (isSimilarityWindowOpen) {
-            if (!similarityWindowRef.current || similarityWindowRef.current.closed) {
-                similarityWindowRef.current = window.open('', '_blank', 'width=480,height=700');
-            }
-            const win = similarityWindowRef.current;
-            if (win) {
-                win.document.title = '유사도 분석';
-                win.document.body.innerHTML = '<div id="similarity-root"></div>';
-                // 스타일 복사: 메인 document의 <link rel="stylesheet">와 <style>을 새 창에 복사
-                const mainHead = document.head;
-                const winHead = win.document.head;
-                // link 복사
-                mainHead.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
-                    const newLink = win.document.createElement('link');
-                    Array.from(link.attributes).forEach(attr => {
-                        newLink.setAttribute(attr.name, attr.value);
-                    });
-                    winHead.appendChild(newLink);
-                });
-                // style 복사
-                mainHead.querySelectorAll('style').forEach(style => {
-                    const newStyle = win.document.createElement('style');
-                    newStyle.textContent = style.textContent;
-                    winHead.appendChild(newStyle);
-                });
-                // React 18+ createRoot 지원
-                import('react-dom/client').then(({ createRoot }) => {
-                    import('./SimilarityTable').then(({ default: SimilarityTable }) => {
-                        const rootEl = win.document.getElementById('similarity-root');
-                        if (rootEl) {
-                            createRoot(rootEl).render(
-                                React.createElement(SimilarityTable, {
-                                    selectedImageIds: Array.from(selectedImages),
-                                })
-                            );
-                        }
-                    });
-                });
-            }
-        } else {
-            if (similarityWindowRef.current && !similarityWindowRef.current.closed) {
-                similarityWindowRef.current.close();
-                similarityWindowRef.current = null;
-            }
-        }
-        const interval = setInterval(() => {
-            if (similarityWindowRef.current && similarityWindowRef.current.closed) {
-                setIsSimilarityWindowOpen(false);
-                similarityWindowRef.current = null;
-            }
-        }, 500);
-        return () => clearInterval(interval);
-    }, [isSimilarityWindowOpen, selectedImages]);
+    }, [selectedImages, threshold, generatePatternFromImages, onSimilarityAnalysis]);
 
     if (totalCount === 0 || images.length === 0) {
         return (
@@ -284,14 +225,14 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
         <div className="w-full h-full">
             <div className="mb-4 p-4 shadow-sm rounded-lg">
                 <div className="flex flex-wrap justify-between items-start gap-4 mb-2">
-                    <div className="flex items-center gap-2">
-                        <span className="badge badge-outline badge-primary">
+                    <div className="flex items-center gap-4 border border-gray-300 rounded-lg px-3 py-1.5 shadow-sm">
+                        <span className="text-primary">
                             이미지{actualImageCount} 개
                         </span>
-                        <span className="badge badge-outline badge-success">
+                        <span className="text-primary">
                             캐시 {imageCache.size}
                         </span>
-                        <span className="badge badge-outline badge-warning">
+                        <span className="text-primary">
                             로딩 {loadingImages.size}
                         </span>
 

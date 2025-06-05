@@ -29,6 +29,25 @@ const DataGrid = React.memo(() => {
             width: 60
         },
         {
+            field: "lotid",
+            headerName: "Lot ID",
+            width: 100
+        },
+        {
+            field: "waferid",
+            headerName: "Wafer ID",
+            width: 100
+        },
+        {
+            field: "endtime",
+            headerName: "종료 시간",
+            width: 150,
+            valueFormatter: (params) => {
+                const date = new Date(params.value);
+                return date.toLocaleString(); // ISO 8601 형식의 날짜 문자열을 로컬 시간으로 변환
+            }
+        },
+        {
             field: "key",
             headerName: "키",
         },

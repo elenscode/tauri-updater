@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./hooks/useTheme";
 import "./index.css";
+import Gallery from "./pages/Gallery";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
@@ -22,6 +23,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           }>
             <Route index element={<Home />} />
             <Route path="draw" element={<Draw />} />
+            <Route path="gallery" element={<Gallery />} />
           </Route>
         </Routes>
       </BrowserRouter>

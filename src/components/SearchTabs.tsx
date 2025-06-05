@@ -2,10 +2,9 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useProductStore } from '../store/useProductStore';
 import { useSearchAction } from '../hooks/useSearchAction';
 import { useImageDataStore } from '../store/useImageDataStore';
+import { fetchImageMetadata } from '../api/imageGenerator';
+import { useNavigate } from 'react-router-dom';
 
-interface SearchTabsProps {
-    onSearch?: (searchData: SearchFormData) => void;
-}
 
 export interface SearchFormData {
     product: string;
@@ -28,7 +27,18 @@ const performSearch = async (searchData: SearchFormData): Promise<SearchFormData
     return searchData;
 };
 
-const SearchTabs: React.FC<SearchTabsProps> = ({ onSearch }) => {
+const SearchTabs: React.FC = () => {
+    const setImageData = useImageDataStore(state => state.setImageData);
+
+    const fetchData = useCallback(async () => {
+        try {
+            const { totalCount, images } = await fetchImageMetadata();
+            setImageData(totalCount, images);
+        } catch (error) {
+            console.error("Error fetching images:", error);
+        }
+    }, [setImageData]);
+
     const { product, step, startDate, endDate, setProductData } = useProductStore();
     const [part, setPart] = useState('');
     const lotInputRef = useRef<HTMLTextAreaElement>(null);
@@ -77,18 +87,20 @@ const SearchTabs: React.FC<SearchTabsProps> = ({ onSearch }) => {
         executeSearch(searchData);
 
         // 검색 완료 시 콜백 호출
-        if (onSearch) {
-            onSearch(searchData);
+        if (fetchData) {
+            fetchData();
         }
     };
+    const navigate = useNavigate();
     const applyFilter = useImageDataStore(state => state.applyFilter);
     const handleDraw = useCallback(() => {
         applyFilter();
+        navigate('/gallery');
     }, [applyFilter]);
 
     return (
-        <div className="w-full max-w-md mx-auto card bg-base-100 shadow-xl rounded-2xl border border-gray-200">
-            <div className="card-body p-6">
+        <div className="w-full max-w-md  bg-base-100">
+            <div className="p-6">
                 <div className="space-y-6">
                     {/* 제품/스텝 선택 */}
                     <div className="grid grid-cols-2 gap-4">
@@ -164,6 +176,7 @@ const SearchTabs: React.FC<SearchTabsProps> = ({ onSearch }) => {
                                         onChange={handlePartChange}
                                         name="part"
                                     />
+
                                 </div>
                                 {searchState.error && (
                                     <div className="alert alert-error">
@@ -216,7 +229,7 @@ const SearchTabs: React.FC<SearchTabsProps> = ({ onSearch }) => {
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-col gap-2 w-full items-center border  border-gray-200 rounded-lg p-6 mt-6">
+                <div className="flex flex-col gap-2 w-full items-center border border-base-300 rounded-box  p-6 mt-6">
                     <label className="select">
                         <span className="label">아이템</span>
                         <select>

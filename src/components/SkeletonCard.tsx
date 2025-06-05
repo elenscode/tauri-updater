@@ -19,7 +19,7 @@ const SkeletonCard: React.FC<SkeletonCardProps> = React.memo(({
     const hasUrl = Boolean(cachedUrl || imageData.url);
     const imageUrl = cachedUrl || imageData.url; return (
         <div
-            className={`relative rounded-lg overflow-hidden shadow-md hover:shadow-lg cursor-pointer ${isSelected ? 'ring-3 ring-info' : ''
+            className={`relative rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg cursor-pointer ${isSelected ? 'ring-3 ring-info' : ''
                 }`}
             onClick={onToggleSelection}
         >
@@ -39,8 +39,8 @@ const SkeletonCard: React.FC<SkeletonCardProps> = React.memo(({
                             e.currentTarget.src = 'https://via.placeholder.com/300x300?text=Error';
                         }}
                     />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/10 to-transparent p-3">
-                        <p className="text-sm font-medium truncate">{imageData.name}</p>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/10 to-transparent text-center">
+                        <p className="text-sm font-medium truncate">{imageData.name}/{imageData.lotid}</p>
                     </div>
                 </div>
             ) : (

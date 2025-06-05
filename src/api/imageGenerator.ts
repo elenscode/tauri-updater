@@ -8,7 +8,10 @@ const fetchImageMetadata = async (): Promise<{ totalCount: number; images: Image
     const images: ImageData[] = Array.from({ length: totalCount }, (_, index) => ({
         id: `image-${index + 1}`,
         key: `key-${index + 1000}`,
-        name: `Image ${index + 1}.jpg`
+        name: `Image ${index + 1}.jpg`,
+        lotid: `lot-${index + 1}`,
+        waferid: `wafer-${Math.floor(index / 10) + 1}`,
+        endtime: new Date(Date.now() - (Math.random() * 10000000)).toISOString(),
     }));
 
     return { totalCount, images };
