@@ -114,7 +114,7 @@ const HeatmapBrushChart: React.FC<HeatmapBrushChartProps> = ({
         }
 
         updateChartSelection();
-    }; const handleBrushSelect = (params: any) => {
+    }; const handleBrushSelect = (params: echarts.EChartsType['events']['brushEnd']) => {
         // brushEnd 이벤트에서는 areas 정보가 다르게 전달될 수 있음
         const areas = params.areas || (params.batch?.[0]?.areas);
         if (!areas || areas.length === 0) return;

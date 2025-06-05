@@ -14,6 +14,7 @@ function Home() {
     const selectedGridItems = useImageDataStore(state => state.selectedGridItems);
     // const cacheVersion = useImageDataStore(state => state.cacheVersion);
 
+
     return (
         <Suspense fallback={<div className="loading loading-spinner loading-lg flex justify-center items-center min-h-screen">Loading...</div>}>
             <div className="w-full bg-base-100 flex flex-col">
