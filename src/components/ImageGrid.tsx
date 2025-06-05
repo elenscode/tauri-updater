@@ -6,16 +6,17 @@ import { generateImageDataUrlFromPoints } from '../utils/imageUtils';
 import SkeletonCard from './SkeletonCard';
 import { fetchPointData } from '../api/imageGenerator';
 import { usePatternStore } from '../store/usePatternStore';
+import { cacheImageFeatures } from '../api/similarityApi';
 
-const ImageGrid: React.FC<ImageGridProps> = ({
+const ImageGrid: React.FC<ImageGridProps> = React.memo(({
     totalCount: propTotalCount,
     images: propImages,
     apiEndpoint = '/api/images',
-    cacheVersion = 0
+    cacheVersion = 0,
+    onSimilarityAnalysis
 }) => {
     const [imageCache, setImageCache] = useState<Map<string, string>>(new Map());
-    const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
-    const [columns, setColumns] = useState(3);
+    const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set()); const [columns, setColumns] = useState(3);
     const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
     const [isCreatingPattern, setIsCreatingPattern] = useState(false);
 
@@ -53,9 +54,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             imageCacheRef.current = new Map();
             loadingImagesRef.current = new Set();
         }
-    }, [cacheVersion]);
-
-    const fetchImageUrl = useCallback(async (imageId: string): Promise<string> => {
+    }, [cacheVersion]); const fetchImageUrl = useCallback(async (imageId: string): Promise<string> => {
         if (imageCacheRef.current.has(imageId)) {
             return imageCacheRef.current.get(imageId)!;
         }
@@ -66,8 +65,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         if (imageData && imageData.url) {
             setImageCache(prev => new Map(prev).set(imageId, imageData.url!));
             return imageData.url;
-        }
-        try {
+        } try {
             setLoadingImages(prev => new Set(prev).add(imageId));
 
             //await new Promise(r => setTimeout(r, 100)); // Simulate API call
@@ -75,6 +73,18 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             // const url = await generateImageUrlFromApi(apiEndpoint + `?id=${imageId}`);
             const points = await fetchPointData(imageId);
             const url = await generateImageDataUrlFromPoints(points);
+            // Cache features in Rust backend for similarity calculation
+            try {
+                const pointsArray: Array<[number, number, number]> = points.map(p => [
+                    parseFloat(p.x.toString()),
+                    parseFloat(p.y.toString()),
+                    parseFloat(p.value)
+                ]);
+                await cacheImageFeatures(imageId, pointsArray);
+                console.log(`Features cached for image: ${imageId}`);
+            } catch (error) {
+                console.warn(`Failed to cache features for image ${imageId}:`, error);
+            }
 
             setImageCache(prev => new Map(prev).set(imageId, url));
             setLoadingImages(prev => {
@@ -123,7 +133,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         if (imagesToLoad.length === 0) return;
         console.log(`Loading ${imagesToLoad.length} images...`);
 
-        const loadPromises = imagesToLoad.slice(0, 20).map(async (imageId) => {
+        const loadPromises = imagesToLoad.slice(0, 10).map(async (imageId) => {
             try {
                 const url = await fetchImageUrl(imageId);
                 if (url) {
@@ -164,9 +174,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         });
     }, []); const clearSelection = useCallback(() => {
         setSelectedImages(new Set());
-    }, []);
-
-    const handleCreatePattern = useCallback(async () => {
+    }, []); const handleCreatePattern = useCallback(async () => {
         if (selectedImages.size === 0) return;
 
         setIsCreatingPattern(true);
@@ -182,8 +190,25 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         } finally {
             setIsCreatingPattern(false);
         }
-    }, [selectedImages, threshold, generatePatternFromImages, navigate]);
+    }, [selectedImages, threshold, generatePatternFromImages, navigate]); const handleAnalyzeSimilarity = useCallback(async () => {
+        if (selectedImages.size === 0) return;
 
+        setIsCreatingPattern(true);
+        try {
+            const selectedImageIds = Array.from(selectedImages);
+            await generatePatternFromImages(selectedImageIds, threshold);
+
+            // 패턴 생성 완료 후 Gallery의 콜백 호출
+            if (onSimilarityAnalysis) {
+                onSimilarityAnalysis(selectedImageIds);
+            }
+        } catch (error) {
+            console.error('패턴 생성 중 오류 발생:', error);
+            alert('패턴 생성 중 오류가 발생했습니다.');
+        } finally {
+            setIsCreatingPattern(false);
+        }
+    }, [selectedImages, threshold, generatePatternFromImages, onSimilarityAnalysis]);
 
     if (totalCount === 0 || images.length === 0) {
         return (
@@ -198,50 +223,57 @@ const ImageGrid: React.FC<ImageGridProps> = ({
 
     return (
         <div className="w-full h-full">
-            <div className="mb-4 p-4 bg-base-200 shadow-sm rounded-lg">
+            <div className="mb-4 p-4 shadow-sm rounded-lg">
                 <div className="flex flex-wrap justify-between items-start gap-4 mb-2">
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="alert alert-info text-sm rounded-full">
+                    <div className="flex items-center gap-4 border border-gray-300 rounded-lg px-3 py-1.5 shadow-sm">
+                        <span className="text-primary">
                             이미지{actualImageCount} 개
                         </span>
-                        <span className="alert alert-success text-sm rounded-full">
+                        <span className="text-primary">
                             캐시 {imageCache.size}
                         </span>
-                        <span className="alert alert-info alert-outline text-sm rounded-full">
+                        <span className="text-primary">
                             로딩 {loadingImages.size}
                         </span>
-                        <span className="alert alert-warning alert-outline text-sm rounded-full">
-                            행 {virtualItems.length}
-                        </span>
+
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="alert alert-info alert-outline text-sm rounded-full">
-                            선택 <span className="font-bold">{selectedImages.size}</span>개
+                        <span className="badge badge-outline badge-info">
+                            선택 {selectedImages.size}개
                         </span>
-
-
-                        <div className='flex items-center gap-2'>                            <button
+                        <button className="btn btn-xs btn-primary"
                             onClick={clearSelection}
                             disabled={selectedImages.size === 0}
-                            className="btn btn-info rounded-full shadow hover:cursor-pointer"
+                        >선택 해제</button>                        <button
+                            onClick={handleCreatePattern}
+                            disabled={selectedImages.size === 0 || isCreatingPattern}
+                            className="btn btn-xs btn-primary"
                         >
-                            선택 해제
+                            {isCreatingPattern ? (
+                                <>
+                                    <span className="loading loading-spinner loading-sm"></span>
+                                    패턴 생성 중...
+                                </>
+                            ) : (
+                                '패턴 만들기'
+                            )}
                         </button>
-                            <button
-                                onClick={handleCreatePattern}
-                                disabled={selectedImages.size === 0 || isCreatingPattern}
-                                className="btn btn-primary rounded-full shadow hover:cursor-pointer"
-                            >
-                                {isCreatingPattern ? (
-                                    <>
-                                        <span className="loading loading-spinner loading-sm"></span>
-                                        패턴 생성 중...
-                                    </>
-                                ) : (
-                                    '패턴 만들기'
-                                )}
-                            </button>
-                        </div>
+
+                        <button
+                            onClick={handleAnalyzeSimilarity}
+                            disabled={selectedImages.size === 0 || isCreatingPattern}
+                            className="btn btn-xs btn-secondary"
+                        >
+                            {isCreatingPattern ? (
+                                <>
+                                    <span className="loading loading-spinner loading-sm"></span>
+                                    분석 중...
+                                </>
+                            ) : (
+                                '유사도 분석'
+                            )}
+                        </button>
+
                     </div>
                     <div className="flex items-center gap-2">
                         <label htmlFor="columns-select" className="font-medium text-gray-700 mr-2">
@@ -321,11 +353,11 @@ const ImageGrid: React.FC<ImageGridProps> = ({
                                 ))}
                             </div>
                         );
-                    })}
-                </div>
+                    })}                </div>
             </div>
+
         </div>
     );
-};
+});
 
 export default ImageGrid;
