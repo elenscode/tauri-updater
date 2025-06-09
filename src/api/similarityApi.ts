@@ -36,7 +36,8 @@ export async function cacheImageFeatures(
         });
     } catch (error) {
         console.error(`Failed to cache features for image ${imageId}:`, error);
-        throw error;
+        // throw error;
+        return '';
     }
 }
 

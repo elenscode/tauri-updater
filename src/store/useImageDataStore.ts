@@ -53,7 +53,7 @@ export const useImageDataStore = create<ImageDataStore>((set, get) => ({
     applyFilter: async () => {
         const { images, selectedGridItems } = get();
         const filtered = images.filter(image => selectedGridItems.has(image.id));
-        await initializeSimilarityDataset();
+        // await initializeSimilarityDataset();
 
         set({
             filteredImages: filtered,

@@ -7,6 +7,12 @@ import SkeletonCard from './SkeletonCard';
 import { fetchPointData } from '../api/imageGenerator';
 import { usePatternStore } from '../store/usePatternStore';
 import { cacheImageFeatures } from '../api/similarityApi';
+import MultiSelect from './MultiSelect';
+
+const options = Array.from({ length: 699 }, (_, i) => i + 1).map(num => ({
+    value: num, label: `BIN${num.toString().padStart(3, '0')}`
+}));
+
 
 const ImageGrid: React.FC<ImageGridProps> = React.memo(({
     totalCount: propTotalCount,
@@ -19,6 +25,8 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
     const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set()); const [columns, setColumns] = useState(3);
     const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
     const [isCreatingPattern, setIsCreatingPattern] = useState(false);
+
+    const [selectedOption, setSelectedOption] = useState<{ value: number | string; label: string }[]>([]);
 
     const navigate = useNavigate();
     const { generatePatternFromImages, threshold } = usePatternStore();
@@ -80,7 +88,7 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
                     parseFloat(p.y.toString()),
                     parseFloat(p.value)
                 ]);
-                await cacheImageFeatures(imageId, pointsArray);
+                // await cacheImageFeatures(imageId, pointsArray);
                 console.log(`Features cached for image: ${imageId}`);
             } catch (error) {
                 console.warn(`Failed to cache features for image ${imageId}:`, error);
@@ -225,26 +233,33 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(({
         <div className="w-full h-full">
             <div className="mb-4 p-4 shadow-sm rounded-lg">
                 <div className="flex flex-wrap justify-between items-start gap-4 mb-2">
-                    <div className="flex items-center gap-4 border border-gray-300 rounded-lg px-3 py-1.5 shadow-sm">
-                        <span className="text-primary">
+                    <div className="min-h-[40px] px-3 py-2 border border-gray-300 rounded-md cursor-pointer
+                    flex items-center gap-1">
+                        <span className="text-xs font-medium rounded-md  px-2 py-1 bg-blue-100 text-primary">
                             이미지{actualImageCount} 개
-                        </span>
-                        <span className="text-primary">
+                        </span>                        <span className="text-xs font-medium rounded-md  px-2 py-1 bg-blue-100 text-primary">
                             캐시 {imageCache.size}
                         </span>
-                        <span className="text-primary">
+                        <span className="text-xs font-medium rounded-md  px-2 py-1 bg-blue-100 text-primary">
                             로딩 {loadingImages.size}
                         </span>
-
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="badge badge-outline badge-info">
+                        <span className="text-xs font-medium rounded-md  px-2 py-1 bg-warning text-primary">
                             선택 {selectedImages.size}개
                         </span>
-                        <button className="btn btn-xs btn-primary"
+                        <button className="btn btn-xs btn-warning"
                             onClick={clearSelection}
                             disabled={selectedImages.size === 0}
-                        >선택 해제</button>                        <button
+                        >선택 해제</button>
+                    </div>
+                    <MultiSelect value={selectedOption}
+                        options={options} onChange={setSelectedOption} placeholder="BIN 선택" isDisabled={isCreatingPattern} />
+
+                    <div className="min-h-[40px] px-3 py-2 border border-gray-300 rounded-md cursor-pointer
+                    flex items-center gap-1">
+                        <button className="btn btn-xs btn-primary" disabled={selectedOption.length === 0}>
+                            영상 이진화
+                        </button>
+                        <button
                             onClick={handleCreatePattern}
                             disabled={selectedImages.size === 0 || isCreatingPattern}
                             className="btn btn-xs btn-primary"
