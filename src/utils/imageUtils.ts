@@ -188,7 +188,8 @@ async function testImageGeneration() {
 export async function generateImageDataUrlFromPoints(
   points: PointData[],
   outputSize: { width: number; height: number } = { width: 250, height: 250 },
-  padding: number = 0
+  padding: number = 0,
+  binaryOptions?: { selectedValues: number[]; isBinary: boolean }
 ): Promise<string> {
   const cv = await getCV();
 
@@ -206,23 +207,39 @@ export async function generateImageDataUrlFromPoints(
 
   // 전체 Mat 크기에 padding 포함
   const width = rawWidth + padding * 2;
-  const height = rawHeight + padding * 2;
-
-  // 2) 값 정규화: [minVal,maxVal] -> [0,255]
+  const height = rawHeight + padding * 2;  // 2) 값 정규화: [minVal,maxVal] -> [0,255] 또는 이진화 처리
   const rawValues = points.map(p => parseInt(p.value, 10));
-  const minVal = Math.min(...rawValues);
-  const maxVal = Math.max(...rawValues);
+  const normalizedValues = new Map<string, number>();
 
+  // 이진화 옵션이 있는 경우 처리
+  if (binaryOptions?.isBinary && binaryOptions.selectedValues.length > 0) {
+    // 이진화: 선택된 값들은 255, 나머지는 0
+    points.forEach(p => {
+      const raw = parseInt(p.value, 10);
+      const key = `${p.x}-${p.y}`;
+      normalizedValues.set(key, binaryOptions.selectedValues.includes(raw) ? 255 : 0);
+    });
+  } else {
+    // 일반 정규화 처리
+    const minVal = Math.min(...rawValues);
+    const maxVal = Math.max(...rawValues);
+    points.forEach(p => {
+      const raw = parseInt(p.value, 10);
+      const key = `${p.x}-${p.y}`;
+      const normalized = maxVal !== minVal
+        ? Math.round(((raw - minVal) / (maxVal - minVal)) * 255)
+        : (raw > 0 ? 255 : 0);
+      normalizedValues.set(key, normalized);
+    });
+  }
   // 3) 그레이스케일 Mat 생성 및 픽셀값 설정 (padding 오프셋 적용)
   const src = cv.Mat.zeros(height, width, cv.CV_8UC1);
   points.forEach(p => {
-    const raw = parseInt(p.value, 10);
-    const norm = maxVal !== minVal
-      ? Math.round(((raw - minVal) / (maxVal - minVal)) * 255)
-      : (raw > 0 ? 255 : 0);
+    const key = `${p.x}-${p.y}`;
+    const normalizedValue = normalizedValues.get(key) || 0;
     const x0 = p.x - xMin + padding;
     const y0 = p.y - yMin + padding;
-    src.ucharPtr(y0, x0)[0] = norm;
+    src.ucharPtr(y0, x0)[0] = normalizedValue;
   });
 
   // 4) RGBA Mat 생성 및 JET 컬러맵 직접 계산

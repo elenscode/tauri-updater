@@ -19,7 +19,7 @@ interface PatternStore {
     setPatternData: (data: HeatmapDataItem[], xLabels: string[], yLabels: string[]) => void;
     setThreshold: (threshold: number) => void;
     clearPattern: () => void;
-    generatePatternFromImages: (imageIds: string[], threshold: number) => Promise<void>;
+    generatePatternFromImages: (imageIds: string[], threshold: number, binaryOptions?: { selectedValues: number[]; isBinary: boolean }) => Promise<void>;
 }
 
 export const usePatternStore = create<PatternStore>()(
@@ -49,15 +49,32 @@ export const usePatternStore = create<PatternStore>()(
             yAxisLabels: [],
             sourceImageIds: [],
             createdAt: null,
-        }),
-
-        generatePatternFromImages: async (imageIds: string[], threshold: number) => {
+        }), generatePatternFromImages: async (imageIds: string[], threshold: number, binaryOptions?: { selectedValues: number[]; isBinary: boolean }) => {
             try {
                 // fetchPointData import
                 const { fetchPointData } = await import('../api/imageGenerator');
 
                 // 모든 이미지의 포인트 데이터를 fetch
-                const allPointDataPromises = imageIds.map(id => fetchPointData(id));
+                const allPointDataPromises = imageIds.map(async (id) => {
+                    const pointData = await fetchPointData(id);
+
+                    // 이진화 모드인 경우 이진화 처리된 데이터 사용
+                    if (binaryOptions?.isBinary) {
+                        console.log(`이진화 처리 중: 이미지 ${id}, 선택된 BIN: ${binaryOptions.selectedValues.join(',')}`);
+                        // 이진화 옵션을 사용하여 포인트 데이터 필터링/변환
+                        return pointData.map(point => {
+                            const value = parseFloat(point.value);
+                            // 선택된 BIN 값들에 해당하는 경우만 유지, 나머지는 0으로 처리
+                            const isInSelectedBins = binaryOptions.selectedValues.includes(value);
+                            return {
+                                ...point,
+                                value: isInSelectedBins ? value.toString() : '0'
+                            };
+                        });
+                    }
+
+                    return pointData;
+                });
                 const allPointData = await Promise.all(allPointDataPromises);
 
                 // 데이터 통합 및 패턴 생성
@@ -83,11 +100,10 @@ export const usePatternStore = create<PatternStore>()(
                     } else {
                         patternData.push([adjustedX, adjustedY, 0]);
                     }
-                });
-
-
-                const xLabels = xValues.map(x => `X${x}`);
+                }); const xLabels = xValues.map(x => `X${x}`);
                 const yLabels = yValues.map(y => `Y${y}`);
+
+                console.log(`패턴 생성 완료: ${binaryOptions?.isBinary ? '이진화 모드' : '일반 모드'}, 총 ${combinedData.length}개 포인트, 활성 패턴 ${selectedData.length}개`);
 
                 set({
                     patternData,
