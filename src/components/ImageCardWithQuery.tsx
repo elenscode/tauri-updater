@@ -26,8 +26,8 @@ const fetchImageData = async (
   );
 };
 
-// 이미지 로딩을 위한 커스텀 훅
-const useImageData = (
+// 이미지 로딩을 위한 커스텀 훅 (export하여 다른 컴포넌트에서도 사용 가능)
+export const useImageData = (
   imageId: string,
   images: ImageData[],
   binaryOptions?: { selectedValues: number[]; isBinary: boolean },
