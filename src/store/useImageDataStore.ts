@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { ImageData } from '../types/image';
-import { initializeSimilarityDataset } from '../api/similarityApi';
+import { ImageData, ImageSubitem } from '../types/image';
+// import { initializeSimilarityDataset } from '../api/similarityApi';
 
 interface ImageDataStore {
     // 전체 이미지 데이터
@@ -11,19 +11,30 @@ interface ImageDataStore {
     searchResults: ImageData[];
 
     // DataGrid에서 선택된 항목들
-    selectedGridItems: Set<string>;
-
-    // 필터된 이미지 (그리기 버튼으로 생성)
+    selectedGridItems: Set<string>;    // 필터된 이미지 (그리기 버튼으로 생성)
     filteredImages: ImageData[];
     filteredTotalCount: number;
+    filteredSubitems: ImageSubitem[];
+
+    // ImageGrid 상태 관리
+    selectedImages: Set<string>;
+    selectedOption: { value: number | string; label: string }[];
+    columns: number;
 
     // 캐시 새로고침을 위한 버전
-    cacheVersion: number;
-
-    // Actions
+    cacheVersion: number;    // Actions
     setImageData: (totalCount: number, images: ImageData[]) => void;
     setSearchResults: (searchResults: ImageData[]) => void;
     setSelectedGridItems: (selectedItems: Set<string>) => void;
+    setSelectedSubitems: (subitems: ImageSubitem[]) => void;
+      // ImageGrid Actions
+    setSelectedImages: (selectedImages: Set<string>) => void;
+    toggleImageSelection: (imageId: string) => void;
+    clearImageSelection: () => void;
+    setSelectedOption: (options: { value: number | string; label: string }[]) => void;
+    setColumns: (columns: number) => void;
+    initializeSelectedOption: (subitems?: { value: number | string; label: string }[]) => void;
+    
     applyFilter: () => void;
     clearData: () => void;
     refreshCache: () => void;
@@ -36,7 +47,14 @@ export const useImageDataStore = create<ImageDataStore>((set, get) => ({
     searchResults: [],
     selectedGridItems: new Set<string>(),
     filteredImages: [],
+    filteredSubitems: [],
     filteredTotalCount: 0,
+    
+    // ImageGrid 상태
+    selectedImages: new Set<string>(),
+    selectedOption: [],
+    columns: 3,
+    
     cacheVersion: 0,
 
     // Actions
@@ -48,7 +66,33 @@ export const useImageDataStore = create<ImageDataStore>((set, get) => ({
 
     setSearchResults: (searchResults) => set({ searchResults }),
 
-    setSelectedGridItems: (selectedItems) => set({ selectedGridItems: selectedItems }),
+    setSelectedGridItems: (selectedItems) => set({ selectedGridItems: selectedItems }),    setSelectedSubitems: (subitems) => set({
+        filteredSubitems: subitems}),
+
+    // ImageGrid Actions
+    setSelectedImages: (selectedImages) => set({ selectedImages }),
+    
+    toggleImageSelection: (imageId) => set((state) => {
+        const newSelectedImages = new Set(state.selectedImages);
+        if (newSelectedImages.has(imageId)) {
+            newSelectedImages.delete(imageId);
+        } else {
+            newSelectedImages.add(imageId);
+        }
+        return { selectedImages: newSelectedImages };
+    }),
+    
+    clearImageSelection: () => set({ selectedImages: new Set<string>() }),
+    
+    setSelectedOption: (options) => set({ selectedOption: options }),
+    
+    setColumns: (columns) => set({ columns }),
+    
+    initializeSelectedOption: (subitems) => {
+        if (subitems && subitems.length > 0) {
+            set({ selectedOption: subitems });
+        }
+    },
 
     applyFilter: async () => {
         const { images, selectedGridItems } = get();
@@ -63,15 +107,16 @@ export const useImageDataStore = create<ImageDataStore>((set, get) => ({
     },
     refreshCache: () => set({
         cacheVersion: Date.now(),
-    }),
-
-    clearData: () => set({
+    }),    clearData: () => set({
         totalCount: 0,
         images: [],
         searchResults: [],
         selectedGridItems: new Set<string>(),
         filteredImages: [],
         filteredTotalCount: 0,
+        selectedImages: new Set<string>(),
+        selectedOption: [],
+        columns: 3,
         cacheVersion: 0,
     }),
 }));

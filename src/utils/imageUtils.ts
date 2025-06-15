@@ -6,7 +6,7 @@ import { getCV } from './opencvLoaders';
 interface ApiDataItem {
   x: number;
   y: number;
-  value: string; // Assuming value comes as a string initially
+  value: number; // value를 number로 변경
 }
 
 interface ApiResponse {
@@ -47,11 +47,11 @@ export async function generateImageUrlFromApi(apiEndpoint: string = MOCK_API_END
       resolve({
         state: true,
         data: [
-          { x: 10, y: 20, value: '100' },
-          { x: 12, y: 22, value: '150' },
-          { x: 10, y: 21, value: '50' },
-          { x: 100, y: 150, value: '200' },
-          { x: 0, y: 0, value: '255' } // For testing bounds
+          { x: 10, y: 20, value: 100 },
+          { x: 12, y: 22, value: 150 },
+          { x: 10, y: 21, value: 50 },
+          { x: 100, y: 150, value: 200 },
+          { x: 0, y: 0, value: 255 } // For testing bounds
         ],
       });
     }, 500));
@@ -101,11 +101,10 @@ export async function generateImageUrlFromApi(apiEndpoint: string = MOCK_API_END
     for (const item of data) {
       const x = item.x - x_min;
       const y = item.y - y_min;
-      const value = parseInt(item.value, 10);
+      const value = item.value;
 
       if (isNaN(value) || value < 0 || value > 255) {
-        console.warn(`Invalid pixel value '${item.value}' for point (${item.x}, ${item.y}). Clamping or skipping.`);
-        // Option: clamp value or skip. For now, let's clamp.
+        console.warn(`Invalid pixel value '${value}' for point (${item.x}, ${item.y}). Clamping or skipping.`);
         const clampedValue = Math.max(0, Math.min(255, value || 0));
         src.ucharPtr(y, x)[0] = clampedValue;
       } else {
@@ -208,27 +207,24 @@ export async function generateImageDataUrlFromPoints(
   // 전체 Mat 크기에 padding 포함
   const width = rawWidth + padding * 2;
   const height = rawHeight + padding * 2;  // 2) 값 정규화: [minVal,maxVal] -> [0,255] 또는 이진화 처리
-  const rawValues = points.map(p => parseInt(p.value, 10));
+  const rawValues = points.map(p => p.value);
   const normalizedValues = new Map<string, number>();
 
-  // 이진화 옵션이 있는 경우 처리
   if (binaryOptions?.isBinary && binaryOptions.selectedValues.length > 0) {
-    // 이진화: 선택된 값들은 255, 나머지는 0
     points.forEach(p => {
-      const raw = parseInt(p.value, 10);
+      const raw = p.value;
       const key = `${p.x}-${p.y}`;
       normalizedValues.set(key, binaryOptions.selectedValues.includes(raw) ? 255 : 0);
     });
   } else {
-    // 일반 정규화 처리
     const minVal = Math.min(...rawValues);
     const maxVal = Math.max(...rawValues);
     points.forEach(p => {
-      const raw = parseInt(p.value, 10);
+      const raw = p.value;
       const key = `${p.x}-${p.y}`;
       const normalized = maxVal !== minVal
         ? Math.round(((raw - minVal) / (maxVal - minVal)) * 255)
-        : (raw > 0 ? 255 : 0);
+        : 0;
       normalizedValues.set(key, normalized);
     });
   }

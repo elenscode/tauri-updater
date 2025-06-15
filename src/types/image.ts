@@ -10,13 +10,12 @@ export interface ImageData {
     endtime?: string; // ISO 8601 형식의 날짜 문자열
     [key: string]: any; // 추가적인 속성을 허용
 }
-
-export interface ImageGridProps {
-    totalCount: number;
-    images: ImageData[];
-    apiEndpoint?: string;
-    cacheVersion?: number;
-    onSimilarityAnalysis?: (imageIds: string[]) => void;
+export interface ImageSubitem {
+    value: number | string;
+    label: string;
 }
 
-export interface PointData { x: number; y: number; value: string; }
+export interface ImageGridProps {
+}
+
+export interface PointData { x: number; y: number; value: number; }

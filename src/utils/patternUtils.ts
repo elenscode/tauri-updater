@@ -25,7 +25,7 @@ export const applyThresholdToBinaryPattern = (
 //  */
 // export const combinePointDataWithAverage = (allPointData: PointData[][]): PointData[] => {
 //     const pointMap = new Map<string, { values: number[], x: number, y: number }>();
-
+//
 //     // 모든 포인트 데이터를 좌표별로 그룹화
 //     allPointData.forEach(imageData => {
 //         imageData.forEach(point => {
@@ -33,10 +33,10 @@ export const applyThresholdToBinaryPattern = (
 //             if (!pointMap.has(key)) {
 //                 pointMap.set(key, { values: [], x: point.x, y: point.y });
 //             }
-//             pointMap.get(key)!.values.push(parseFloat(point.value));
+//             pointMap.get(key)!.values.push(point.value);
 //         });
 //     });
-
+//
 //     // 각 좌표에서 평균값 계산
 //     const combinedData: PointData[] = [];
 //     pointMap.forEach(({ values, x, y }) => {
@@ -44,10 +44,10 @@ export const applyThresholdToBinaryPattern = (
 //         combinedData.push({
 //             x,
 //             y,
-//             value: average.toString()
+//             value: average
 //         });
 //     });
-
+//
 //     return combinedData;
 // };
 
@@ -81,7 +81,7 @@ export const applyThresholdToBinaryPattern = (
 //     const activeCells = patternData.filter(point => point.value === 1).length;
 //     const inactiveCells = totalCells - activeCells;
 //     const activePercentage = totalCells > 0 ? (activeCells / totalCells) * 100 : 0;
-
+//
 //     return {
 //         totalCells,
 //         activeCells,

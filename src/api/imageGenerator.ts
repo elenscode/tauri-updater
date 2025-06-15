@@ -36,7 +36,7 @@ const fetchPointData = async (_imageId: string): Promise<PointData[]> => {
             const dist = Math.sqrt(((x - xStart) * xSize - centerX) ** 2 + ((y - yStart) * ySize - centerY) ** 2);
             if (dist <= radius) {
                 const value = Math.floor(Math.random() * 600) + 1;
-                data.push({ x, y, value: value.toString() });
+                data.push({ x, y, value});
             }
         }
     }
