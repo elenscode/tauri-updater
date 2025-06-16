@@ -6,7 +6,6 @@ import {
   ICellRendererParams,
 } from "ag-grid-community";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { AgGridReact } from "ag-grid-react";
 import { ImageData } from "../types/image";
@@ -27,39 +26,17 @@ const calculateSimilarity = async (imageId: string): Promise<number> => {
     .split("")
     .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const random = ((seed * 9301 + 49297) % 233280) / 233280; // 간단한 시드 기반 랜덤
-
   // 0.5 ~ 1.0 사이의 유사도 값 생성
   return random * 0.5 + 0.5;
 };
 
-// 유사도 계산 훅 (enabled 파라미터로 수동 제어)
-const useSimilarityCalculation = (
-  imageId: string,
-  enabled: boolean = false
-) => {
-  return useQuery({
-    queryKey: ["similarity", imageId],
-    queryFn: () => calculateSimilarity(imageId),
-    staleTime: Infinity, // 한번 계산하면 캐시 유지
-    gcTime: 10 * 60 * 1000, // 10분
-    enabled: enabled && !!imageId,
-    retry: 2,
-  });
-};
-
-// 유사도 셀 렌더러 컴포넌트
+// 유사도 셀 렌더러 컴포넌트 (직접 계산 방식)
 const SimilarityCellRenderer: React.FC<
-  ICellRendererParams<ImageData> & { calculationStarted: boolean }
-> = ({ data, calculationStarted }) => {
-  // 계산이 시작되었고 이미지 ID가 있을 때만 쿼리 활성화
-  const shouldCalculate = calculationStarted && !!data?.id;
-
-  const {
-    data: calculatedSimilarity,
-    isLoading,
-    error,
-  } = useSimilarityCalculation(data?.id || "", shouldCalculate);
-
+  ICellRendererParams<ImageData> & {
+    calculationStarted: boolean;
+    isCalculating: boolean;
+  }
+> = ({ data, calculationStarted, isCalculating }) => {
   // 계산이 시작되지 않은 경우
   if (!calculationStarted) {
     // 기존 similarity 값이 있다면 표시
@@ -82,7 +59,8 @@ const SimilarityCellRenderer: React.FC<
     );
   }
 
-  if (isLoading) {
+  // 계산 중인 경우 (similarity 값이 없고 계산이 진행 중)
+  if (isCalculating && data?.similarity === undefined) {
     return (
       <div className="flex items-center justify-center h-full gap-2">
         <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -91,20 +69,13 @@ const SimilarityCellRenderer: React.FC<
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <span className="text-sm text-red-500">오류</span>
-      </div>
-    );
-  }
-
-  if (calculatedSimilarity !== undefined) {
-    const percentage = (calculatedSimilarity * 100).toFixed(1);
+  // 계산 완료된 경우
+  if (data?.similarity !== undefined) {
+    const percentage = (data.similarity * 100).toFixed(1);
     const colorClass =
-      calculatedSimilarity >= 0.8
+      data.similarity >= 0.8
         ? "text-green-600"
-        : calculatedSimilarity >= 0.6
+        : data.similarity >= 0.6
         ? "text-yellow-600"
         : "text-red-600";
 
@@ -114,20 +85,6 @@ const SimilarityCellRenderer: React.FC<
       </div>
     );
   }
-
-  // 기존 similarity 값이 있다면 표시
-  if (data?.similarity !== undefined) {
-    const percentage =
-      typeof data.similarity === "number"
-        ? (data.similarity * 100).toFixed(1)
-        : data.similarity;
-    return (
-      <div className="flex items-center justify-center h-full">
-        <span className="text-gray-600">{percentage}%</span>
-      </div>
-    );
-  }
-
   return (
     <div className="flex items-center justify-center h-full">
       <span className="text-gray-400">-</span>
@@ -180,17 +137,24 @@ const WaferImageCellRenderer: React.FC<ICellRendererParams<ImageData>> = ({
 
 const SimDataGrid = React.memo(() => {
   const { theme } = useTheme();
-  const queryClient = useQueryClient();
-
   // DataGrid에 필요한 상태만 선택적으로 구독
-  const searchResults = useImageDataStore((state) => state.searchResults);
+  const filteredImages = useImageDataStore((state) => state.filteredImages);
   const selectedGridItems = useImageDataStore(
     (state) => state.selectedGridItems
   );
-  const setSelectedGridItems = useImageDataStore(
-    (state) => state.setSelectedGridItems
-  );
-  const setSearchResults = useImageDataStore((state) => state.setSearchResults);
+
+  // AG Grid에서 정렬을 위해 filteredImages를 로컬 상태로 관리
+  const [gridData, setGridData] = useState<ImageData[]>([]);
+
+  // filteredImages 변경 시 gridData 업데이트 및 계산 상태 초기화
+  useEffect(() => {
+    setGridData([...filteredImages]); // 새 배열로 복사하여 AG Grid가 인식할 수 있도록 함
+    // filteredImages가 변경되면 계산 상태 초기화
+    setCalculationStarted(false);
+    setSimilarityProgress({ completed: 0, total: 0, calculating: new Set() });
+    setIsCalculatingAll(false);
+  }, [filteredImages]);
+
   // 유사도 계산 상태 관리
   const [isCalculatingAll, setIsCalculatingAll] = useState(false);
   const [calculationStarted, setCalculationStarted] = useState(false);
@@ -198,88 +162,64 @@ const SimDataGrid = React.memo(() => {
     completed: number;
     total: number;
     calculating: Set<string>;
-  }>({ completed: 0, total: 0, calculating: new Set() });
+  }>({ completed: 0, total: 0, calculating: new Set() }); // 전체 유사도 계산 시작
+  const startSimilarityCalculation = useCallback(async () => {
+    if (gridData.length === 0) return;
 
-  // QueryClient에서 실제 완료된 계산 상태 확인
-  const checkCompletedCalculations = useCallback(() => {
-    if (searchResults.length === 0) {
-      setSimilarityProgress({ completed: 0, total: 0, calculating: new Set() });
-      return;
-    }
+    setIsCalculatingAll(true);
+    setCalculationStarted(true); // 계산 시작 표시    // 계산 상태 초기화 - 모든 similarity 값을 undefined로 리셋
+    const resetData = gridData.map(
+      (item): ImageData => ({
+        ...item,
+        similarity: undefined,
+      })
+    );
+    setGridData(resetData);
 
-    const total = searchResults.length;
-    let completed = 0;
-    const calculating = new Set<string>();
-
-    searchResults.forEach((item) => {
-      const queryKey = ["similarity", item.id];
-      const queryState = queryClient.getQueryState(queryKey);
-
-      if (queryState?.status === "success") {
-        completed++;
-      } else if (queryState?.status === "pending") {
-        calculating.add(item.id);
-      } else if (item.similarity !== undefined) {
-        // 기존에 similarity 값이 있는 경우
-        completed++;
-      }
+    setSimilarityProgress({
+      completed: 0,
+      total: gridData.length,
+      calculating: new Set(gridData.map((item) => item.id)),
     });
 
-    setSimilarityProgress({ completed, total, calculating });
-  }, [searchResults, queryClient]);
-
-  // 진행률 업데이트를 위한 effect
-  useEffect(() => {
-    checkCompletedCalculations();
-
-    // 일정 간격으로 진행률 체크 (계산 중일 때만)
-    if (isCalculatingAll || similarityProgress.calculating.size > 0) {
-      const interval = setInterval(checkCompletedCalculations, 500);
-      return () => clearInterval(interval);
-    }
-  }, [
-    searchResults,
-    isCalculatingAll,
-    checkCompletedCalculations,
-    similarityProgress.calculating.size,
-  ]);
-  // 전체 유사도 계산 시작
-  const startSimilarityCalculation = useCallback(async () => {
-    setIsCalculatingAll(true);
-    setCalculationStarted(true); // 계산 시작 표시
-
     try {
-      // 모든 이미지에 대해 유사도 계산 쿼리를 프리페치
-      const promises = searchResults.map(async (item) => {
-        const queryKey = ["similarity", item.id];
+      const updatedData: ImageData[] = [...resetData];
 
-        // 이미 계산된 경우 스킵
-        const existingData = queryClient.getQueryData(queryKey);
-        if (existingData) return existingData;
+      // 각 이미지에 대해 순차적으로 계산 (진행률 업데이트를 위해)
+      for (let i = 0; i < gridData.length; i++) {
+        const item = gridData[i];
 
-        // 유사도 계산 실행
-        return queryClient.fetchQuery({
-          queryKey,
-          queryFn: () => calculateSimilarity(item.id),
-          staleTime: Infinity,
-        });
-      });
+        try {
+          const similarity = await calculateSimilarity(item.id); // 결과 업데이트
+          updatedData[i] = { ...updatedData[i], similarity };
+          setGridData([...updatedData]);
 
-      // 모든 계산 완료 대기
-      const results = await Promise.all(promises);
-      // 계산 결과를 searchResults에 반영
-      const updatedResults = searchResults.map((item, index) => ({
-        ...item,
-        similarity: results[index] as number,
-      }));
-
-      setSearchResults(updatedResults);
+          // 진행률 업데이트
+          setSimilarityProgress((prev) => ({
+            completed: prev.completed + 1,
+            total: prev.total,
+            calculating: new Set(
+              [...prev.calculating].filter((id) => id !== item.id)
+            ),
+          }));
+        } catch (error) {
+          console.error(`이미지 ${item.id} 유사도 계산 실패:`, error);
+          // 오류 발생 시에도 진행률 업데이트
+          setSimilarityProgress((prev) => ({
+            completed: prev.completed + 1,
+            total: prev.total,
+            calculating: new Set(
+              [...prev.calculating].filter((id) => id !== item.id)
+            ),
+          }));
+        }
+      }
     } catch (error) {
       console.error("유사도 계산 중 오류 발생:", error);
     } finally {
       setIsCalculatingAll(false);
     }
-  }, [searchResults, queryClient, setSearchResults]);
+  }, [gridData]);
 
   // Custom Theme: Defines the grid's theme.
   const customTheme = useMemo(() => {
@@ -298,23 +238,19 @@ const SimDataGrid = React.memo(() => {
         sortable: false,
         filter: false,
         resizable: false,
-        cellClass: "ag-cell-center",
+        cellClass: "center-aligned-cell",
       },
       {
         field: "lotid",
         headerName: "Lot ID",
         width: 100,
-        cellStyle: {
-          display: "flex",
-          "align-items": "center",
-          "justify-content": "center",
-        },
+        cellClass: "center-aligned-cell",
       },
       {
         field: "waferid",
         headerName: "Wafer ID",
         width: 100,
-        cellClass: "ag-cell-center",
+        cellClass: "center-aligned-cell",
       },
       {
         field: "endtime",
@@ -324,7 +260,7 @@ const SimDataGrid = React.memo(() => {
           const date = new Date(params.value);
           return date.toLocaleString(); // ISO 8601 형식의 날짜 문자열을 로컬 시간으로 변환
         },
-        cellClass: "ag-cell-center",
+        cellClass: "center-aligned-cell",
       },
       {
         field: "similarity",
@@ -333,12 +269,14 @@ const SimDataGrid = React.memo(() => {
         cellRenderer: SimilarityCellRenderer,
         cellRendererParams: {
           calculationStarted: calculationStarted,
+          isCalculating: isCalculatingAll,
         },
         sortable: true,
         filter: false,
+        cellClass: "center-aligned-cell",
       },
     ],
-    [calculationStarted]
+    [calculationStarted, isCalculatingAll]
   );
   const defaultColDef: ColDef = {
     flex: 1,
@@ -349,18 +287,6 @@ const SimDataGrid = React.memo(() => {
 
   // 행 높이 설정 (이미지 표시를 위해)
   const rowHeight = 150;
-
-  // 선택 변경 핸들러
-  const onSelectionChanged = useCallback(
-    (event: any) => {
-      const selectedRows = event.api.getSelectedRows();
-      const selectedIds = new Set<string>(
-        selectedRows.map((row: ImageData) => row.id)
-      );
-      setSelectedGridItems(selectedIds);
-    },
-    [setSelectedGridItems]
-  );
 
   // 그리드 준비 완료 시 초기 선택 상태 설정
   const onGridReady = useCallback(
@@ -385,11 +311,12 @@ const SimDataGrid = React.memo(() => {
         {/* 상단: 버튼과 상태 */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
+            {" "}
             <button
               onClick={startSimilarityCalculation}
-              disabled={isCalculatingAll || searchResults.length === 0}
+              disabled={isCalculatingAll || gridData.length === 0}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                isCalculatingAll || searchResults.length === 0
+                isCalculatingAll || gridData.length === 0
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg"
               }`}
@@ -403,10 +330,9 @@ const SimDataGrid = React.memo(() => {
                 "유사도 계산"
               )}
             </button>
-
-            {searchResults.length > 0 && (
+            {gridData.length > 0 && (
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                총 {searchResults.length}개 이미지
+                총 {gridData.length}개 이미지
               </span>
             )}
           </div>
@@ -468,17 +394,13 @@ const SimDataGrid = React.memo(() => {
             align-items: center;
             justify-content: center;
           }
-        `}</style>
+        `}</style>{" "}
         <AgGridReact
-          rowData={searchResults}
+          rowData={gridData}
           columnDefs={colDefs}
           defaultColDef={defaultColDef}
           rowHeight={rowHeight}
-          rowSelection={{
-            mode: "multiRow",
-          }}
           theme={customTheme}
-          onSelectionChanged={onSelectionChanged}
           onGridReady={onGridReady}
           className="w-full h-full"
         />
