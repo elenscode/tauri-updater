@@ -68,9 +68,17 @@ const SimilarityCellRenderer: React.FC<
       </div>
     );
   }
-
   // 계산 완료된 경우
   if (data?.similarity !== undefined) {
+    // 오류 상태 처리 (similarity === -1)
+    if (data.similarity === -1) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <span className="text-red-500 text-sm font-medium">오류</span>
+        </div>
+      );
+    }
+
     const percentage = (data.similarity * 100).toFixed(1);
     const colorClass =
       data.similarity >= 0.8
@@ -175,7 +183,6 @@ const SimDataGrid = React.memo(() => {
       })
     );
     setGridData(resetData);
-
     setSimilarityProgress({
       completed: 0,
       total: gridData.length,
@@ -183,16 +190,17 @@ const SimDataGrid = React.memo(() => {
     });
 
     try {
-      const updatedData: ImageData[] = [...resetData];
-
-      // 각 이미지에 대해 순차적으로 계산 (진행률 업데이트를 위해)
-      for (let i = 0; i < gridData.length; i++) {
-        const item = gridData[i];
-
+      // 모든 이미지에 대해 병렬로 유사도 계산 시작
+      const promises = gridData.map(async (item, index) => {
         try {
-          const similarity = await calculateSimilarity(item.id); // 결과 업데이트
-          updatedData[i] = { ...updatedData[i], similarity };
-          setGridData([...updatedData]);
+          const similarity = await calculateSimilarity(item.id);
+
+          // 각 계산이 완료될 때마다 즉시 gridData 업데이트
+          setGridData((prevData) => {
+            const newData = [...prevData];
+            newData[index] = { ...newData[index], similarity };
+            return newData;
+          });
 
           // 진행률 업데이트
           setSimilarityProgress((prev) => ({
@@ -202,9 +210,19 @@ const SimDataGrid = React.memo(() => {
               [...prev.calculating].filter((id) => id !== item.id)
             ),
           }));
+
+          return { index, similarity, success: true };
         } catch (error) {
           console.error(`이미지 ${item.id} 유사도 계산 실패:`, error);
-          // 오류 발생 시에도 진행률 업데이트
+
+          // 오류 발생 시 similarity를 -1로 설정하여 오류 표시
+          setGridData((prevData) => {
+            const newData = [...prevData];
+            newData[index] = { ...newData[index], similarity: -1 };
+            return newData;
+          });
+
+          // 진행률 업데이트 (오류도 완료로 처리)
           setSimilarityProgress((prev) => ({
             completed: prev.completed + 1,
             total: prev.total,
@@ -212,8 +230,15 @@ const SimDataGrid = React.memo(() => {
               [...prev.calculating].filter((id) => id !== item.id)
             ),
           }));
+
+          return { index, similarity: -1, success: false, error };
         }
-      }
+      });
+
+      // 모든 병렬 계산이 완료될 때까지 대기
+      const results = await Promise.all(promises);
+
+      console.log("모든 유사도 계산이 완료되었습니다:", results);
     } catch (error) {
       console.error("유사도 계산 중 오류 발생:", error);
     } finally {
@@ -244,13 +269,21 @@ const SimDataGrid = React.memo(() => {
         field: "lotid",
         headerName: "Lot ID",
         width: 100,
-        cellClass: "center-aligned-cell",
+        cellStyle: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        },
       },
       {
         field: "waferid",
         headerName: "Wafer ID",
         width: 100,
-        cellClass: "center-aligned-cell",
+        cellStyle: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        },
       },
       {
         field: "endtime",
@@ -260,7 +293,11 @@ const SimDataGrid = React.memo(() => {
           const date = new Date(params.value);
           return date.toLocaleString(); // ISO 8601 형식의 날짜 문자열을 로컬 시간으로 변환
         },
-        cellClass: "center-aligned-cell",
+        cellStyle: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        },
       },
       {
         field: "similarity",
@@ -347,20 +384,14 @@ const SimDataGrid = React.memo(() => {
         {/* 진행률 바 (계산 중이거나 진행률이 있을 때만 표시) */}
         {(isCalculatingAll || similarityProgress.total > 0) && (
           <div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-              <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${
-                    similarityProgress.total > 0
-                      ? (similarityProgress.completed /
-                          similarityProgress.total) *
-                        100
-                      : 0
-                  }%`,
-                }}
-              />
-            </div>
+            <progress
+              className="progress progress-primary w-full"
+              value={
+                (similarityProgress.completed / similarityProgress.total) * 100
+              }
+              max="100"
+            ></progress>
+
             <div className="flex justify-between items-center">
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 {similarityProgress.total > 0
@@ -382,19 +413,6 @@ const SimDataGrid = React.memo(() => {
       </div>{" "}
       {/* AG Grid */}
       <div className="flex-1">
-        <style>{`
-          .ag-cell-center {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-          }
-          .ag-cell-center .ag-cell-wrapper {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-        `}</style>{" "}
         <AgGridReact
           rowData={gridData}
           columnDefs={colDefs}

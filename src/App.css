@@ -4,3 +4,8 @@
   font-optical-sizing: auto;
   /* padding-top: 10vh; */
 }
+.center-aligned-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
