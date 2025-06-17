@@ -1,0 +1,11 @@
+{
+    "version": "0.1.1",
+    "notes": "버그 수정:\n- 특정 조건에서 프로그램이 예기치 않게 종료되던 문제를 수정했습니다.\n기능 개선:\n- 사용자 인터페이스의 반응 속도를 개선했습니다.",
+    "pub_date": "2025-05-09T14:30:00Z",
+      "platforms": {
+        "windows-x86_64": {
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTS1IySlVjWUVKdk96aE81V0xXTlpqdktBSXRpbGVBT3ZxKzlUNjJwVEtCRHZ6QW13cTAyalU2d1pYNkw3emhhNkprYjB5YXlpRWRreWhjbUxNdGU1R1NpNjJSOVRIZndJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzQ2Nzk1MzM2CWZpbGU6dGF1cmktdXBkYXRlcl8wLjEuMF94NjRfZW4tVVMubXNpCmVCUVgwSTNOV1krNFNhbVQ3VXVTT3JRM0VnQmRJTXRsT0UwSjFBOGlxbWlxUjBQY3p4ZXE5WHhVNGRHZ1krK0JBWXVMZ1R3OHowMThUam1XNVJjY0NBPT0K",
+          "url": "https://github.com/elenscode/tauri-updater/releases/latest/download/tauri-updater_0.1.0_x64_en-US.msi"
+        }
+      }
+    }
