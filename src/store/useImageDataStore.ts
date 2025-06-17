@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ImageData } from '../types/image';
+import { initializeSimilarityDataset } from '../api/similarityApi';
 
 interface ImageDataStore {
     // 전체 이미지 데이터
@@ -49,9 +50,11 @@ export const useImageDataStore = create<ImageDataStore>((set, get) => ({
 
     setSelectedGridItems: (selectedItems) => set({ selectedGridItems: selectedItems }),
 
-    applyFilter: () => {
+    applyFilter: async () => {
         const { images, selectedGridItems } = get();
         const filtered = images.filter(image => selectedGridItems.has(image.id));
+        await initializeSimilarityDataset();
+
         set({
             filteredImages: filtered,
             filteredTotalCount: filtered.length,

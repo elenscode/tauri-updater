@@ -187,7 +187,7 @@ async function testImageGeneration() {
 
 export async function generateImageDataUrlFromPoints(
   points: PointData[],
-  outputSize: { width: number; height: number } = { width: 300, height: 300 },
+  outputSize: { width: number; height: number } = { width: 250, height: 250 },
   padding: number = 0
 ): Promise<string> {
   const cv = await getCV();
