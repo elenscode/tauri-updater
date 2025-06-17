@@ -12,7 +12,7 @@ interface ProductDataStore {
     clearData: () => void;
 }
 
-export const useProductStore = create<ProductDataStore>((set, get) => ({
+export const useProductStore = create<ProductDataStore>((set) => ({
     product: 'V1',
     step: 'H',
     startDate: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString().split('T')[0],
