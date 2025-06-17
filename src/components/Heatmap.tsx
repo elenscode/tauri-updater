@@ -36,9 +36,9 @@ const Heatmap: React.FC<HeatmapProps> = ({
   const [coordinatesText, setCoordinatesText] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   // Y축 반전 및 라벨 개수 제어
-  const [reverseY, setReverseY] = useState<boolean>(false);
-  const [xLabelSplit, setXLabelSplit] = useState<number>(20);
-  const [yLabelSplit, setYLabelSplit] = useState<number>(20);
+  const [reverseY] = useState<boolean>(false);
+  const [xLabelSplit] = useState<number>(20);
+  const [yLabelSplit] = useState<number>(20);
 
   useEffect(() => {
     if (!layout || layout.length === 0) return;

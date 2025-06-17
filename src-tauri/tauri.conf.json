@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "tauri-updater",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "identifier": "com.tauri-updater.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -37,7 +37,7 @@
     "updater": {
       "active": true,
       "dialog": true,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJDMDk4MTcxNTQ2MjQ3OEEKUldTS1IySlVjWUVKdktEKzlaRXA1V0daOXJNVnpncnFvdUdOTnNKN2pJMjdLcWpWVVAzS1ZITkUK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY4MzFCQ0E4RjFERDdEQzMKUldURGZkM3hxTHd4YVA3ZWN2V2Mwbm1DZm9NWTgrZW9pNjJhSldHclhQN2JPZ3cybE8vZWtNWTUK",
       "endpoints": [
         "https://github.com/elenscode/tauri-updater/releases/latest/download/latest.json"
       ],

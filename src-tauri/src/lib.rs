@@ -2,8 +2,11 @@
 mod image_generator;
 mod similarity_engine;
 
+use tauri_plugin_updater::UpdaterExt;
+
 use image_generator::{ImageGenerator, ImageResult};
 use similarity_engine::{SimilarityEngine, SimilarityResult};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -53,12 +56,57 @@ async fn get_similarity_cache_status() -> Result<(usize, Vec<String>), String> {
     SimilarityEngine::get_cache_status()
 }
 
+async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    if let Some(update) = app.updater()?.check().await? {
+        let answer = app
+            .dialog()
+            .message("New Update Available")
+            .title("Tauri is Awesome")
+            .buttons(MessageDialogButtons::OkCancelCustom(
+                "Ok".to_owned(),
+                "Cancel".to_owned(),
+            ))
+            .blocking_show();
+
+        let mut downloaded = 0;
+
+        if !answer {
+            return Ok(()); // User cancelled the update
+        }
+        // alternatively we could also call update.download() and update.install() separately
+        update
+            .download_and_install(
+                |chunk_length, content_length| {
+                    downloaded += chunk_length;
+                    println!("downloaded {downloaded} from {content_length:?}");
+                },
+                || {
+                    println!("download finished");
+                },
+            )
+            .await?;
+
+        println!("update installed");
+        app.restart();
+    }
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                update(handle).await.unwrap();
+            });
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             generate_image_from_data,
